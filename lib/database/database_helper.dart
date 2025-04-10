@@ -563,6 +563,38 @@ class DatabaseHelper {
     }
   }
 
+  Future<List<MonthlyBalance>> getAccountBalanceHistory(String accountId, {int monthsLimit = 12}) async {
+    final db = await instance.database;
+    
+    try {
+      // Get all available monthly balances for this account
+      final List<Map<String, dynamic>> maps = await db.query(
+        'monthly_balances',
+        where: 'account_id = ?',
+        whereArgs: [accountId],
+      );
+      
+      // Convert to MonthlyBalance objects
+      List<MonthlyBalance> balances = List.generate(maps.length, (i) {
+        return MonthlyBalance.fromJson(maps[i]);
+      });
+      
+      // Sort by month (descending)
+      balances.sort((a, b) => b.month.compareTo(a.month));
+      
+      // Limit to the requested number of months
+      if (balances.length > monthsLimit) {
+        balances = balances.sublist(0, monthsLimit);
+      }
+      
+      // Return in chronological order for charting
+      return balances.reversed.toList();
+    } catch (e) {
+      print('Error fetching account balance history: $e');
+      return [];
+    }
+  }
+
   bool _isValidMonthFormat(String month) {
     final RegExp regex = RegExp(r'^\d{4}-\d{2}$');
     return regex.hasMatch(month);
