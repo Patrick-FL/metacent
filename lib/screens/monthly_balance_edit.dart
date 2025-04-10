@@ -319,12 +319,13 @@ class _MonthlyBalanceEditScreenState extends State<MonthlyBalanceEditScreen> {
                                       leftTitles: AxisTitles(
                                         sideTitles: SideTitles(
                                           showTitles: true,
+                                          reservedSize: 44, // Increase reserved space for y-axis labels
                                           getTitlesWidget: (value, meta) {
                                             return Padding(
                                               padding: const EdgeInsets.only(right: 8.0),
                                               child: Text(
                                                 NumberFormat.compact().format(value),
-                                                style: const TextStyle(fontSize: 10),
+                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                                               ),
                                             );
                                           },
