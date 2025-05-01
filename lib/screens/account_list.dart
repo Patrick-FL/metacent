@@ -12,13 +12,44 @@ class AccountListScreen extends StatefulWidget {
 
 class _AccountListScreenState extends State<AccountListScreen> {
   List<Account> accounts = [];
+  List<Account> filteredAccounts = [];
   List<String> existingGroups = [];
   final dbHelper = DatabaseHelper.instance;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadAccounts();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _filterAccounts();
+    });
+  }
+
+  void _filterAccounts() {
+    if (_searchQuery.isEmpty) {
+      filteredAccounts = accounts;
+    } else {
+      final query = _searchQuery.toLowerCase();
+      filteredAccounts = accounts.where((account) {
+        return account.accountName.toLowerCase().contains(query) ||
+               account.description.toLowerCase().contains(query) ||
+               account.accountGroup.toLowerCase().contains(query);
+      }).toList();
+    }
   }
 
   Future<void> _loadAccounts() async {
@@ -33,6 +64,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
     
     setState(() {
       accounts = loadedAccounts;
+      filteredAccounts = loadedAccounts;
       existingGroups = loadedGroups;
     });
   }
@@ -43,42 +75,76 @@ class _AccountListScreenState extends State<AccountListScreen> {
       appBar: AppBar(
         title: const Text('Sachkonten'),
       ),
-      body: accounts.isEmpty
-          ? const Center(
-              child: Text(
-                'Keine Sachkonten vorhanden\nKlicken Sie auf + um ein neues Konto anzulegen',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Suchen',
+                hintText: 'Suche nach Kontoname, Beschreibung...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                      },
+                    )
+                  : null,
               ),
-            )
-          : ListView.builder(
-              itemCount: accounts.length,
-              itemBuilder: (context, index) {
-                final account = accounts[index];
-                return ListTile(
-                  title: Text(account.accountName),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(account.description),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Kontogruppe: ${account.accountGroup}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Typ: ${account.accountType.toString().split('.').last}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  isThreeLine: true,
-                  onTap: () => _editAccount(account),
-                );
-              },
             ),
+          ),
+          Expanded(
+            child: filteredAccounts.isEmpty
+                ? Center(
+                    child: _searchQuery.isNotEmpty
+                        ? const Text(
+                            'Keine Ergebnisse gefunden',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16),
+                          )
+                        : const Text(
+                            'Keine Sachkonten vorhanden\nKlicken Sie auf + um ein neues Konto anzulegen',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16),
+                          ),
+                  )
+                : ListView.builder(
+                    itemCount: filteredAccounts.length,
+                    itemBuilder: (context, index) {
+                      final account = filteredAccounts[index];
+                      return ListTile(
+                        title: Text(account.accountName),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(account.description),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Kontogruppe: ${account.accountGroup}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Typ: ${account.accountType.toString().split('.').last}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        isThreeLine: true,
+                        onTap: () => _editAccount(account),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _createNewAccount,
         child: const Icon(Icons.add),

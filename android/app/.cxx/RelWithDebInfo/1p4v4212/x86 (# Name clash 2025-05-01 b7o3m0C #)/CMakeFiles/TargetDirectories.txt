@@ -1,0 +1,2 @@
+C:/Users/patri/Documents/proton/My files/Software/windsurf/MetaCent/metacent/android/app/.cxx/RelWithDebInfo/1p4v4212/x86/CMakeFiles/edit_cache.dir
+C:/Users/patri/Documents/proton/My files/Software/windsurf/MetaCent/metacent/android/app/.cxx/RelWithDebInfo/1p4v4212/x86/CMakeFiles/rebuild_cache.dir

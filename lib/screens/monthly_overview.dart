@@ -15,15 +15,55 @@ class MonthlyOverviewScreen extends StatefulWidget {
 class _MonthlyOverviewScreenState extends State<MonthlyOverviewScreen> {
   final dbHelper = DatabaseHelper.instance;
   List<MonthlyBalance> balances = [];
+  List<MonthlyBalance> filteredBalances = [];
   List<Account> accounts = [];
   String selectedMonth = '';
   List<String> availableMonths = [];
   bool isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _initializeData();
+    _searchController.addListener(_onSearchChanged);
+  }
+  
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _filterBalances();
+    });
+  }
+
+  void _filterBalances() {
+    if (_searchQuery.isEmpty) {
+      filteredBalances = balances;
+    } else {
+      final query = _searchQuery.toLowerCase();
+      filteredBalances = balances.where((balance) {
+        // Find corresponding account
+        final accountOpt = accounts.where((a) => a.id == balance.accountId).toList();
+        if (accountOpt.isEmpty) {
+          return false;
+        }
+        
+        final account = accountOpt.first;
+        
+        // Filter by account name, description, or group
+        return account.accountName.toLowerCase().contains(query) ||
+               account.description.toLowerCase().contains(query) ||
+               account.accountGroup.toLowerCase().contains(query);
+      }).toList();
+    }
   }
 
   Future<void> _initializeData() async {
@@ -69,6 +109,7 @@ class _MonthlyOverviewScreenState extends State<MonthlyOverviewScreen> {
         availableMonths = months;
         selectedMonth = currentMonth;
         balances = loadedBalances;
+        filteredBalances = loadedBalances;
         isLoading = false;
       });
     } catch (e) {
@@ -79,6 +120,7 @@ class _MonthlyOverviewScreenState extends State<MonthlyOverviewScreen> {
         availableMonths = [];
         selectedMonth = '';
         balances = [];
+        filteredBalances = [];
       });
       
       // Show error message
@@ -110,6 +152,9 @@ class _MonthlyOverviewScreenState extends State<MonthlyOverviewScreen> {
       setState(() {
         selectedMonth = month;
         balances = loadedBalances;
+        // Reset search when changing months
+        _searchController.clear();
+        filteredBalances = loadedBalances;
         isLoading = false;
       });
     } catch (e) {
@@ -262,14 +307,50 @@ class _MonthlyOverviewScreenState extends State<MonthlyOverviewScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : balances.isEmpty
-              ? const Center(
-                  child: Text(
-                    'Keine Daten für diesen Monat vorhanden',
-                    style: TextStyle(fontSize: 16),
+          : Column(
+              children: [
+                _buildMonthSelector(),
+                
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: 'Suchen',
+                      hintText: 'Suche nach Kontoname, Beschreibung...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
+                    ),
                   ),
-                )
-              : _buildBalancesList(),
+                ),
+                
+                _buildSummaryCard(),
+                
+                // Balances list with filtered results
+                Expanded(
+                  child: filteredBalances.isEmpty && _searchQuery.isNotEmpty
+                    ? const Center(
+                        child: Text(
+                          'Keine Ergebnisse gefunden',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      )
+                    : _buildBalancesList(),
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _createNewMonth,
         tooltip: 'Neuen Monat erstellen',
@@ -278,201 +359,206 @@ class _MonthlyOverviewScreenState extends State<MonthlyOverviewScreen> {
     );
   }
 
-  Widget _buildBalancesList() {
-    // Gruppiere Balances nach Kontotyp
-    final Map<AccountType, List<MonthlyBalance>> groupedBalances = {};
-    List<MonthlyBalance> validBalances = [];
-    
-    // Filter out balances with missing accounts
-    for (var balance in balances) {
-      try {
-        final accountOpt = accounts.where((a) => a.id == balance.accountId).toList();
-        if (accountOpt.isEmpty) {
-          print('Warning: Account with ID ${balance.accountId} not found for balance. Skipping this balance.');
-          continue;
-        }
-        
-        validBalances.add(balance);
-      } catch (e) {
-        print('Error processing balance: $e');
-      }
-    }
-    
-    // Group valid balances by account type
-    for (var balance in validBalances) {
-      try {
-        // Find the account or skip this balance if not found
-        final accountOpt = accounts.where((a) => a.id == balance.accountId).toList();
-        if (accountOpt.isEmpty) {
-          print('Warning: Account with ID ${balance.accountId} not found.');
-          continue;
-        }
-        
-        final account = accountOpt.first;
-        
-        if (!groupedBalances.containsKey(account.accountType)) {
-          groupedBalances[account.accountType] = [];
-        }
-        
-        groupedBalances[account.accountType]!.add(balance);
-      } catch (e) {
-        print('Error grouping balance: $e');
-      }
-    }
-    
-    // Berechne Summen
+  Widget _buildMonthSelector() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: availableMonths.indexOf(selectedMonth) < availableMonths.length - 1
+                ? () {
+                    final currentIndex = availableMonths.indexOf(selectedMonth);
+                    if (currentIndex < availableMonths.length - 1) {
+                      _loadBalancesForMonth(availableMonths[currentIndex + 1]);
+                    }
+                  }
+                : null,
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                _formatMonth(selectedMonth),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: availableMonths.indexOf(selectedMonth) > 0
+                ? () {
+                    final currentIndex = availableMonths.indexOf(selectedMonth);
+                    if (currentIndex > 0) {
+                      _loadBalancesForMonth(availableMonths[currentIndex - 1]);
+                    }
+                  }
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    // Calculate totals based on the filtered balances
     double totalCashFlow = 0;
     double totalNetWorth = 0;
     
-    for (var balance in validBalances) {
-      try {
-        // Find the account or skip this balance if not found
-        final accountOpt = accounts.where((a) => a.id == balance.accountId).toList();
-        if (accountOpt.isEmpty) {
-          print('Warning: Account with ID ${balance.accountId} not found.');
-          continue;
-        }
-        
-        final account = accountOpt.first;
-        
-        // Cash Flow Berechnung
-        if (account.accountType == AccountType.moneyBusy || 
-            account.accountType == AccountType.moneyIdle) {
-          totalCashFlow += balance.balance;
-        } else if (account.accountType == AccountType.physical) {
-          totalCashFlow += 0;
-        } else {
-          totalCashFlow -= balance.balance;
-        }
-        
-        // Net Worth Berechnung
-        if (account.accountType == AccountType.moneyBusy || 
-            account.accountType == AccountType.moneyIdle) {
-          totalNetWorth += balance.balance;
-        } else if (account.accountType == AccountType.moneyCredit) {
-          totalNetWorth -= balance.balance;
-        }
-      } catch (e) {
-        print('Error calculating totals: $e');
+    for (var balance in filteredBalances) {
+      final accountOpt = accounts.where((a) => a.id == balance.accountId).toList();
+      if (accountOpt.isEmpty) continue;
+      
+      final account = accountOpt.first;
+      
+      // Cash Flow Berechnung
+      if (account.accountType == AccountType.moneyBusy || 
+          account.accountType == AccountType.moneyIdle) {
+        totalCashFlow += balance.balance;
+      } else if (account.accountType == AccountType.physical) {
+        totalCashFlow += 0;
+      } else {
+        totalCashFlow -= balance.balance;
+      }
+      
+      // Net Worth Berechnung
+      if (account.accountType == AccountType.moneyBusy || 
+          account.accountType == AccountType.moneyIdle) {
+        totalNetWorth += balance.balance;
+      } else if (account.accountType == AccountType.moneyCredit) {
+        totalNetWorth -= balance.balance;
       }
     }
     
-    return Column(
-      children: [
-        // Zusammenfassung
-        Card(
-          margin: const EdgeInsets.all(8),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Zusammenfassung',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Zusammenfassung',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Cash Flow Balance:'),
-                    Text(
-                      _formatCurrency(totalCashFlow),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: totalCashFlow >= 0 ? Colors.green : Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Net Worth Cash:'),
-                    Text(
-                      _formatCurrency(totalNetWorth),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: totalNetWorth >= 0 ? Colors.green : Colors.red,
-                      ),
-                    ),
-                  ],
+                const Text('Cash Flow Balance:'),
+                Text(
+                  _formatCurrency(totalCashFlow),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: totalCashFlow >= 0 ? Colors.green : Colors.red,
+                  ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Net Worth Cash:'),
+                Text(
+                  _formatCurrency(totalNetWorth),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: totalNetWorth >= 0 ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBalancesList() {
+    // Gruppiere Balances nach Kontotyp
+    final Map<AccountType, List<MonthlyBalance>> groupedBalances = {};
+    
+    for (var balance in filteredBalances) {
+      final accountOpt = accounts.where((a) => a.id == balance.accountId).toList();
+      if (accountOpt.isEmpty) continue;
+      
+      final account = accountOpt.first;
+      
+      if (!groupedBalances.containsKey(account.accountType)) {
+        groupedBalances[account.accountType] = [];
+      }
+      
+      groupedBalances[account.accountType]!.add(balance);
+    }
+    
+    return ListView(
+      children: AccountType.values.map((type) {
+        final typeBalances = groupedBalances[type] ?? [];
         
-        // Liste der Konten nach Typ
-        Expanded(
-          child: ListView(
-            children: AccountType.values.map((type) {
-              final typeBalances = groupedBalances[type] ?? [];
-              
-              if (typeBalances.isEmpty) {
+        if (typeBalances.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                _getAccountTypeName(type),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ...typeBalances.map((balance) {
+              // Find the account or return an empty widget if not found
+              final accountOpt = accounts.where((a) => a.id == balance.accountId).toList();
+              if (accountOpt.isEmpty) {
+                print('Warning: Account with ID ${balance.accountId} not found for list item.');
                 return const SizedBox.shrink();
               }
               
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Text(
-                      _getAccountTypeName(type),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  ...typeBalances.map((balance) {
-                    // Find the account or return an empty widget if not found
-                    final accountOpt = accounts.where((a) => a.id == balance.accountId).toList();
-                    if (accountOpt.isEmpty) {
-                      print('Warning: Account with ID ${balance.accountId} not found for list item.');
-                      return const SizedBox.shrink();
-                    }
-                    
-                    final account = accountOpt.first;
-                    
-                    return ListTile(
-                      title: Text(account.accountName),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(account.description),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Kontostand: ${_formatCurrency(balance.balance)}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  'Budget: ${_formatCurrency(balance.budget)}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ],
+              final account = accountOpt.first;
+              
+              return ListTile(
+                title: Text(account.accountName),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(account.description),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Kontostand: ${_formatCurrency(balance.balance)}',
+                            style: const TextStyle(fontSize: 12),
                           ),
-                        ],
-                      ),
-                      isThreeLine: true,
-                      onTap: () => _editBalance(balance),
-                    );
-                  }).toList(),
-                  const Divider(),
-                ],
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Budget: ${_formatCurrency(balance.budget)}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                isThreeLine: true,
+                onTap: () => _editBalance(balance),
               );
             }).toList(),
-          ),
-        ),
-      ],
+            const Divider(),
+          ],
+        );
+      }).toList(),
     );
   }
 }
