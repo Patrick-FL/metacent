@@ -1,6 +1,8 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:io' show Platform;
 import '../models/account.dart';
 import '../models/monthly_balance.dart';
 
@@ -17,21 +19,32 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB(String filePath) async {
-    // Windows-spezifische Initialisierung
-    sqfliteFfiInit();
-    final databaseFactory = databaseFactoryFfi;
-    
     final documentsDirectory = await getApplicationDocumentsDirectory();
     final path = join(documentsDirectory.path, filePath);
-
-    return await databaseFactory.openDatabase(
-      path,
-      options: OpenDatabaseOptions(
-        version: 4, // Version erhöht für Datenbankupgrade
+    
+    // Use platform-specific database factory
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      // Windows/Linux/macOS-specific initialization
+      sqfliteFfiInit();
+      final databaseFactory = databaseFactoryFfi;
+      
+      return await databaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 4,
+          onCreate: _createDB,
+          onUpgrade: _upgradeDB,
+        ),
+      );
+    } else {
+      // For Android and iOS, use the standard implementation
+      return await openDatabase(
+        path,
+        version: 4,
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
-      ),
-    );
+      );
+    }
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {

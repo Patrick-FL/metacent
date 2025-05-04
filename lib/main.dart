@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'dart:io' show Platform;
 import 'screens/account_list.dart';
 import 'screens/monthly_overview.dart';
 
 void main() {
-  // Initialisiere SQLite für Windows
-  sqfliteFfiInit();
+  // Initialize SQLite platform-specifically
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    // Use FFI implementation for desktop platforms
+    sqfliteFfiInit();
+  }
   
   // Initialisiere Lokalisierung für Datumsformatierung
   initializeDateFormatting('de_DE');
@@ -54,6 +58,18 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/logo.png',
+              height: 40,
+            ),
+            const SizedBox(width: 10),
+            const Text('MetaCent'),
+          ],
+        ),
+      ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
