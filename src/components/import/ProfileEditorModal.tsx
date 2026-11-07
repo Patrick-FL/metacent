@@ -19,6 +19,10 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
   const existingProfiles = storage.getImportProfiles(account.id);
   const categories = storage.getCategories();
 
+  const [selectedId, setSelectedId] = useState<string>(
+    existingProfiles[0]?.id || 'default'
+  );
+
   const [activeProfile, setActiveProfile] = useState<ImportProfile>(
     existingProfiles[0] || {
       id: `prof-${Date.now()}`,
@@ -47,6 +51,53 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleSelectProfile = (id: string) => {
+    setSelectedId(id);
+    const found = existingProfiles.find((p) => p.id === id);
+    if (found) {
+      setActiveProfile({ ...found });
+    }
+  };
+
+  const handleCreateNewProfile = () => {
+    const newProf: ImportProfile = {
+      id: `prof-${Date.now()}`,
+      accountId: account.id,
+      profileName: `Neue Vorlage (${account.nickname})`,
+      delimiter: ';',
+      dateFormat: 'DD.MM.YYYY',
+      decimalSeparator: ',',
+      thousandsSeparator: '.',
+      headerRowIndex: 0,
+      fieldMappings: {
+        date: 'Buchungstag',
+        payee: 'Beguenstigter/Zahlungspflichtiger',
+        amount: 'Betrag',
+        memo: 'Verwendungszweck',
+      },
+      categoryMatchRules: [],
+    };
+    storage.saveImportProfile(newProf);
+    setActiveProfile(newProf);
+    setSelectedId(newProf.id);
+  };
+
+  const handleDeleteProfile = () => {
+    if (existingProfiles.length <= 1) {
+      alert('Mindestens eine Vorlage muss erhalten bleiben.');
+      return;
+    }
+    if (window.confirm(`Vorlage "${activeProfile.profileName}" wirklich löschen?`)) {
+      storage.deleteImportProfile(activeProfile.id);
+      const remaining = storage.getImportProfiles(account.id);
+      if (remaining.length > 0) {
+        setActiveProfile({ ...remaining[0] });
+        setSelectedId(remaining[0].id);
+      }
+      onSuccess();
+    }
+  };
+
   const handleAddRule = () => {
     if (!newRulePattern.trim()) return;
     setActiveProfile({
@@ -70,7 +121,10 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
   };
 
   const handleSave = () => {
-    storage.saveImportProfile(activeProfile);
+    storage.saveImportProfile({
+      ...activeProfile,
+      accountId: account.id,
+    });
     onSuccess();
     onClose();
   };
@@ -85,7 +139,7 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
             <div>
               <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--nothing-muted)]">IMPORT // PROFILES</p>
               <h3 className="font-bold text-base text-[var(--nothing-text)]">
-                Import-Vorlage konfigurieren ({account.nickname})
+                Import-Vorlagen verwalten ({account.nickname})
               </h3>
             </div>
           </div>
@@ -96,6 +150,47 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+
+        {/* Profile Selector Toolbar */}
+        <div className="mb-4 bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-3 rounded-2xl flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
+              Vorlage auswählen
+            </label>
+            <select
+              value={selectedId}
+              onChange={(e) => handleSelectProfile(e.target.value)}
+              className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1 text-xs text-[var(--nothing-text)] font-mono focus:outline-none"
+            >
+              {existingProfiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.profileName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end gap-1.5 pt-4">
+            <button
+              type="button"
+              onClick={handleCreateNewProfile}
+              className="flex items-center gap-1 px-3 py-1 bg-[var(--nothing-surface)] border border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] rounded-xl text-xs font-mono text-[var(--nothing-text)] cursor-pointer"
+              title="Neue Vorlage anlegen"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#D71921]" />
+              <span>Neu</span>
+            </button>
+            {existingProfiles.length > 1 && (
+              <button
+                type="button"
+                onClick={handleDeleteProfile}
+                className="p-1.5 border border-[#D71921]/30 hover:bg-[#D71921]/10 text-[#D71921] rounded-xl cursor-pointer"
+                title="Aktuelle Vorlage löschen"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-4 overflow-y-auto flex-1 pr-1">
@@ -121,7 +216,7 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
                 onChange={(e) => setActiveProfile({ ...activeProfile, delimiter: e.target.value })}
                 className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-xl px-3 py-1.5 text-xs text-[var(--nothing-text)] focus:outline-none focus:border-[var(--nothing-text)] font-mono"
               >
-                <option value=";">Semikolon (;) — Trade Republic, DKB</option>
+                <option value=";">Semikolon (;) — Trade Republic, DKB, Sparkasse</option>
                 <option value=",">Komma (,) — Standard CSV</option>
                 <option value={"\t"}>Tabulator (\t)</option>
               </select>
@@ -172,7 +267,7 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
             </span>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="font-mono text-[10px] text-[var(--nothing-muted)]">Datum:</span>
+                <span className="font-mono text-[10px] text-[var(--nothing-muted)]">Datum-Spalte:</span>
                 <input
                   type="text"
                   value={activeProfile.fieldMappings.date}
@@ -186,7 +281,7 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
                 />
               </div>
               <div>
-                <span className="font-mono text-[10px] text-[var(--nothing-muted)]">Empfänger / Text:</span>
+                <span className="font-mono text-[10px] text-[var(--nothing-muted)]">Empfänger-Spalte:</span>
                 <input
                   type="text"
                   value={activeProfile.fieldMappings.payee}
@@ -200,7 +295,7 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
                 />
               </div>
               <div>
-                <span className="font-mono text-[10px] text-[var(--nothing-muted)]">Betrag:</span>
+                <span className="font-mono text-[10px] text-[var(--nothing-muted)]">Betrag-Spalte:</span>
                 <input
                   type="text"
                   value={activeProfile.fieldMappings.amount || ''}
@@ -214,14 +309,14 @@ export const ProfileEditorModal: React.FC<ProfileEditorModalProps> = ({
                 />
               </div>
               <div>
-                <span className="font-mono text-[10px] text-[var(--nothing-muted)]">Typ (optional):</span>
+                <span className="font-mono text-[10px] text-[var(--nothing-muted)]">Verwendungszweck / Memo:</span>
                 <input
                   type="text"
-                  value={activeProfile.fieldMappings.type || ''}
+                  value={activeProfile.fieldMappings.memo || ''}
                   onChange={(e) =>
                     setActiveProfile({
                       ...activeProfile,
-                      fieldMappings: { ...activeProfile.fieldMappings, type: e.target.value },
+                      fieldMappings: { ...activeProfile.fieldMappings, memo: e.target.value },
                     })
                   }
                   className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1 text-xs text-[var(--nothing-text)] font-mono focus:outline-none focus:border-[var(--nothing-text)]"

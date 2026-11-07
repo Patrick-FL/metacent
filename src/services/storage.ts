@@ -105,11 +105,11 @@ function getInitialData(): StorageSchema {
     },
   ];
 
-  // Pre-configured Trade Republic CSV import profile
+  // Pre-configured CSV import profiles
   const importProfiles: ImportProfile[] = [
     {
       id: 'prof-trade-republic',
-      accountId,
+      accountId: 'all',
       profileName: 'Trade Republic Kontoauszug (CSV)',
       delimiter: ';',
       dateFormat: 'DD.MM.YYYY',
@@ -126,6 +126,43 @@ function getInitialData(): StorageSchema {
         { sourceField: 'Typ', pattern: 'Zinsen', targetCategoryId: 'cat-notgroschen' },
         { sourceField: 'Bezeichnung', pattern: 'Supermarkt', targetCategoryId: 'cat-lebensmittel' },
       ],
+    },
+    {
+      id: 'prof-sparkasse',
+      accountId: 'all',
+      profileName: 'Sparkasse / Volksbank (CSV)',
+      delimiter: ';',
+      dateFormat: 'DD.MM.YYYY',
+      decimalSeparator: ',',
+      thousandsSeparator: '.',
+      headerRowIndex: 0,
+      fieldMappings: {
+        date: 'Buchungstag',
+        payee: 'Beguenstigter/Zahlungspflichtiger',
+        amount: 'Betrag',
+        memo: 'Verwendungszweck',
+      },
+      categoryMatchRules: [
+        { sourceField: 'Verwendungszweck', pattern: 'Gehalt', targetCategoryId: 'cat-notgroschen' },
+        { sourceField: 'Beguenstigter/Zahlungspflichtiger', pattern: 'Supermarkt', targetCategoryId: 'cat-lebensmittel' },
+      ],
+    },
+    {
+      id: 'prof-standard-comma',
+      accountId: 'all',
+      profileName: 'Standard CSV (Komma getrennt)',
+      delimiter: ',',
+      dateFormat: 'YYYY-MM-DD',
+      decimalSeparator: '.',
+      thousandsSeparator: ',',
+      headerRowIndex: 0,
+      fieldMappings: {
+        date: 'Date',
+        payee: 'Payee',
+        amount: 'Amount',
+        memo: 'Memo',
+      },
+      categoryMatchRules: [],
     },
   ];
 
@@ -229,7 +266,12 @@ class StorageService {
 
   public getImportProfiles(accountId?: string): ImportProfile[] {
     if (accountId) {
-      return this.data.importProfiles.filter((p) => p.accountId === accountId);
+      const specific = this.data.importProfiles.filter((p) => p.accountId === accountId);
+      const globals = this.data.importProfiles.filter((p) => p.accountId === 'all');
+      if (specific.length > 0) {
+        return [...specific, ...globals];
+      }
+      return this.data.importProfiles;
     }
     return this.data.importProfiles;
   }

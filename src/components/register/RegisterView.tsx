@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Account, Transaction } from '../../types';
 import { formatCurrency, parseCurrencyInput } from '../../services/currency';
 import { storage } from '../../services/storage';
@@ -15,8 +15,20 @@ import {
   Lock,
   Copy,
   Split,
+  FilterX,
 } from 'lucide-react';
 import { SplitTransactionModal } from './SplitTransactionModal';
+import {
+  AllFilters,
+  emptyFilters,
+  hasActiveFilters,
+  applyAllFilters,
+  CategoryFilter,
+  PayeeFilter,
+  DateFilter,
+  StatusFilter,
+  AmountFilter,
+} from './ColumnFilter';
 
 interface RegisterViewProps {
   account: Account;
@@ -35,7 +47,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
 }) => {
   const [isAddingInline, setIsAddingInline] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'uncleared' | 'cleared' | 'reconciled'>('all');
+  const [columnFilters, setColumnFilters] = useState<AllFilters>(emptyFilters);
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
 
@@ -51,15 +63,40 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   const categories = storage.getCategories();
   const selectedTx = selectedTxId ? transactions.find((t) => t.id === selectedTxId) : null;
 
-  const filteredTransactions = transactions.filter((tx) => {
-    if (statusFilter !== 'all' && tx.clearedStatus !== statusFilter) return false;
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      tx.payee.toLowerCase().includes(q) ||
-      tx.memo.toLowerCase().includes(q)
-    );
-  });
+  // Derive unique payees for the filter dropdown
+  const uniquePayees = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach((tx) => {
+      if (tx.payee.trim()) set.add(tx.payee);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'de'));
+  }, [transactions]);
+
+  // Apply column filters + text search
+  const filteredTransactions = useMemo(() => {
+    // First apply column filters
+    let result = applyAllFilters(transactions, columnFilters);
+
+    // Then apply text search on top
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (tx) =>
+          tx.payee.toLowerCase().includes(q) ||
+          tx.memo.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [transactions, columnFilters, searchQuery]);
+
+  const isFiltered = hasActiveFilters(columnFilters);
+  const activeFilterCount = Object.values(columnFilters).filter((v) => v !== null).length;
+
+  const handleClearAllFilters = () => {
+    setColumnFilters(emptyFilters);
+    setSearchQuery('');
+  };
 
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
@@ -312,18 +349,18 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
           )}
         </div>
 
-        {/* Filter & Search */}
+        {/* Search + Clear All Filters */}
         <div className="flex items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-full text-xs font-mono uppercase tracking-wider px-3 py-1.5 text-[var(--nothing-text)] focus:outline-none focus:border-[var(--nothing-border-hover)]"
-          >
-            <option value="all">Alle Buchungen</option>
-            <option value="uncleared">Nur Offene</option>
-            <option value="cleared">Nur Bestätigte</option>
-            <option value="reconciled">Nur Abgestimmte (Gesperrt)</option>
-          </select>
+          {isFiltered && (
+            <button
+              type="button"
+              onClick={handleClearAllFilters}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D71921]/30 bg-[#D71921]/5 text-[#D71921] font-mono text-[10px] uppercase tracking-wider font-semibold hover:bg-[#D71921]/10 transition-colors cursor-pointer"
+            >
+              <FilterX className="w-3.5 h-3.5" />
+              <span>Alle Filter aufheben ({activeFilterCount})</span>
+            </button>
+          )}
 
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[var(--nothing-muted)]" />
@@ -420,15 +457,122 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
         </div>
       )}
 
-      {/* Virtualized Table Header */}
-      <div className="bg-[var(--nothing-subsurface)] border-b border-[var(--nothing-border)] font-mono text-xs uppercase tracking-wider text-[var(--nothing-muted)] font-medium grid grid-cols-12 px-6 py-2.5 select-none shrink-0">
-        <span className="col-span-2">Datum</span>
-        <span className="col-span-3">Zahlungsempfänger</span>
-        <span className="col-span-3">Kategorie</span>
-        <span className="col-span-2 text-right">Ausgabe</span>
-        <span className="col-span-1 text-right">Einnahme</span>
-        <span className="col-span-1 text-center">Status</span>
+      {/* Table Header with Column Filters */}
+      <div className="bg-[var(--nothing-subsurface)] border-b border-[var(--nothing-border)] font-mono text-xs uppercase tracking-wider text-[var(--nothing-muted)] font-medium grid grid-cols-12 px-6 py-2.5 select-none shrink-0 items-center">
+        <div className="col-span-2">
+          <DateFilter
+            value={columnFilters.date}
+            onChange={(v) =>
+              setColumnFilters((prev) => ({ ...prev, date: v }))
+            }
+          />
+        </div>
+        <div className="col-span-3">
+          <PayeeFilter
+            payees={uniquePayees}
+            value={columnFilters.payee}
+            onChange={(v) =>
+              setColumnFilters((prev) => ({ ...prev, payee: v }))
+            }
+          />
+        </div>
+        <div className="col-span-3">
+          <CategoryFilter
+            categories={categories}
+            value={columnFilters.category}
+            onChange={(v) =>
+              setColumnFilters((prev) => ({ ...prev, category: v }))
+            }
+          />
+        </div>
+        <div className="col-span-2 flex justify-end">
+          <AmountFilter
+            label="Ausgabe"
+            value={columnFilters.outflow}
+            onChange={(v) =>
+              setColumnFilters((prev) => ({ ...prev, outflow: v }))
+            }
+            align="right"
+          />
+        </div>
+        <div className="col-span-1 flex justify-end">
+          <AmountFilter
+            label="Einnahme"
+            value={columnFilters.inflow}
+            onChange={(v) =>
+              setColumnFilters((prev) => ({ ...prev, inflow: v }))
+            }
+            align="right"
+          />
+        </div>
+        <div className="col-span-1 flex justify-center">
+          <StatusFilter
+            value={columnFilters.status}
+            onChange={(v) =>
+              setColumnFilters((prev) => ({ ...prev, status: v }))
+            }
+          />
+        </div>
       </div>
+
+      {/* Filter summary bar (when filters are active) */}
+      {isFiltered && (
+        <div className="bg-[#D71921]/5 border-b border-[#D71921]/10 px-6 py-1.5 flex items-center gap-2 shrink-0">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[#D71921] font-semibold">
+            {filteredTransactions.length} von {transactions.length} Buchungen
+          </span>
+          <div className="flex items-center gap-1 ml-auto flex-wrap">
+            {columnFilters.date && (
+              <FilterTag
+                label="Datum"
+                onRemove={() =>
+                  setColumnFilters((prev) => ({ ...prev, date: null }))
+                }
+              />
+            )}
+            {columnFilters.payee && (
+              <FilterTag
+                label={`Empfänger (${columnFilters.payee.selectedPayees.length || columnFilters.payee.searchQuery})`}
+                onRemove={() =>
+                  setColumnFilters((prev) => ({ ...prev, payee: null }))
+                }
+              />
+            )}
+            {columnFilters.category && (
+              <FilterTag
+                label={`Kategorie (${columnFilters.category.selectedIds.length})`}
+                onRemove={() =>
+                  setColumnFilters((prev) => ({ ...prev, category: null }))
+                }
+              />
+            )}
+            {columnFilters.outflow && (
+              <FilterTag
+                label="Ausgabe"
+                onRemove={() =>
+                  setColumnFilters((prev) => ({ ...prev, outflow: null }))
+                }
+              />
+            )}
+            {columnFilters.inflow && (
+              <FilterTag
+                label="Einnahme"
+                onRemove={() =>
+                  setColumnFilters((prev) => ({ ...prev, inflow: null }))
+                }
+              />
+            )}
+            {columnFilters.status && (
+              <FilterTag
+                label="Status"
+                onRemove={() =>
+                  setColumnFilters((prev) => ({ ...prev, status: null }))
+                }
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Virtualized Scroll Area */}
       <div ref={parentRef} className="flex-1 overflow-y-auto bg-[var(--nothing-surface)]">
@@ -536,3 +680,21 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
     </div>
   );
 };
+
+// ─── Filter Tag (removable pill) ────────────────────────────────────────
+
+const FilterTag: React.FC<{ label: string; onRemove: () => void }> = ({
+  label,
+  onRemove,
+}) => (
+  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#D71921]/20 bg-[#D71921]/5 text-[#D71921] font-mono text-[10px] uppercase tracking-wider">
+    {label}
+    <button
+      type="button"
+      onClick={onRemove}
+      className="hover:text-[#D71921] cursor-pointer"
+    >
+      <span className="text-xs leading-none">×</span>
+    </button>
+  </span>
+);

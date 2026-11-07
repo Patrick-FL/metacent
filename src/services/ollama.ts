@@ -6,6 +6,33 @@ export interface OllamaCategorizationResponse {
   model: string;
 }
 
+let cachedOllamaStatus: boolean | null = null;
+let lastOllamaCheck = 0;
+
+/**
+ * Checks if a local Ollama daemon is currently responsive with a fast timeout (250ms).
+ */
+export async function isOllamaAvailable(): Promise<boolean> {
+  const now = Date.now();
+  if (cachedOllamaStatus !== null && now - lastOllamaCheck < 15000) {
+    return cachedOllamaStatus;
+  }
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 250);
+    const res = await fetch('http://localhost:11434/api/tags', {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    cachedOllamaStatus = res.ok;
+  } catch {
+    cachedOllamaStatus = false;
+  }
+  lastOllamaCheck = now;
+  return cachedOllamaStatus;
+}
+
 /**
  * Service to request local AI categorization from a running Ollama daemon.
  * Target models: llama3.2:3b, qwen2.5:3b, phi3.5.
@@ -17,6 +44,12 @@ export async function categorizeWithOllama(
   categories: Category[],
   model: string = 'llama3.2:3b'
 ): Promise<OllamaCategorizationResponse | null> {
+  // If Ollama is offline, immediately return fast semantic heuristic (0ms wait)
+  const isOnline = await isOllamaAvailable();
+  if (!isOnline) {
+    return fallbackHeuristic(payee, categories);
+  }
+
   const categoryNames = categories.map((c) => `"${c.id}": "${c.name}"`).join(', ');
 
   const prompt = `Du bist ein intelligenter Assistent für Buchungskategorisierung in einer Finanz-App.
@@ -73,7 +106,7 @@ Antworte ausschließlich mit einem JSON-Objekt im Format:
 /**
  * Local lightweight heuristic fallback when Ollama is offline.
  */
-function fallbackHeuristic(payee: string, categories: Category[]): OllamaCategorizationResponse | null {
+export function fallbackHeuristic(payee: string, categories: Category[]): OllamaCategorizationResponse | null {
   const p = payee.toLowerCase();
 
   const keywords: Record<string, string[]> = {

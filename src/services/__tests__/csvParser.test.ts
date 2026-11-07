@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCsvFile, normalizeDateToIso } from '../csvParser';
+import { parseCsvFile, normalizeDateToIso, inspectCsv } from '../csvParser';
 import { ImportProfile } from '../../types';
 
 describe('CSV Statement Parser & Account Templates', () => {
@@ -55,6 +55,36 @@ describe('CSV Statement Parser & Account Templates', () => {
     expect(parsed[2].date).toBe('2026-10-20');
     expect(parsed[2].amountCents).toBe(-1299);
     expect(parsed[2].suggestedCategoryId).toBeNull();
+  });
+
+  it('inspects CSV and auto-detects delimiter, headers and mappings', () => {
+    const sparkasseCsv = `"Auftragskonto";"Buchungstag";"Valutadatum";"Buchungstext";"Verwendungszweck";"Beguenstigter/Zahlungspflichtiger";"Betrag";"Waehrung"
+"DE12500105170123456789";"24.10.2026";"24.10.2026";"GUTSCHRIFT";"Gehalt Monat 10";"Arbeitgeber Digital GmbH";"2.850,00";"EUR"
+"DE12500105170123456789";"22.10.2026";"22.10.2026";"KARTENZAHLUNG";"EC-Zahlung 22.10 14:32";"REWE Supermarkt Filiale 412";"-64,30";"EUR"`;
+
+    const inspection = inspectCsv(sparkasseCsv);
+    expect(inspection.delimiter).toBe(';');
+    expect(inspection.headerRowIndex).toBe(0);
+    expect(inspection.headers).toContain('Buchungstag');
+    expect(inspection.headers).toContain('Beguenstigter/Zahlungspflichtiger');
+    expect(inspection.headers).toContain('Betrag');
+    expect(inspection.suggestedMappings.date).toBe('Buchungstag');
+    expect(inspection.suggestedMappings.payee).toBe('Beguenstigter/Zahlungspflichtiger');
+    expect(inspection.suggestedMappings.amount).toBe('Betrag');
+    expect(inspection.suggestedDateFormat).toBe('DD.MM.YYYY');
+  });
+
+  it('handles comma-separated English CSV files smoothly', () => {
+    const genericCsv = `Date,Payee,Amount,Memo
+2026-11-01,GitHub Copilot,-10.00,Subscription
+2026-11-02,Client Payment,1500.00,Invoice 102`;
+
+    const inspection = inspectCsv(genericCsv);
+    expect(inspection.delimiter).toBe(',');
+    expect(inspection.suggestedMappings.date).toBe('Date');
+    expect(inspection.suggestedMappings.payee).toBe('Payee');
+    expect(inspection.suggestedMappings.amount).toBe('Amount');
+    expect(inspection.suggestedDateFormat).toBe('YYYY-MM-DD');
   });
 });
 
