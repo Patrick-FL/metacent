@@ -100,7 +100,6 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
       let ruleInfo = item.matchRuleName;
 
       if (!catId && !isDuplicate) {
-        // Run AI categorization via Ollama
         const aiMatch = await categorizeWithOllama(item.payee, item.memo, item.amountCents, categories);
         if (aiMatch) {
           catId = aiMatch.categoryId;
@@ -154,9 +153,8 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
 
   const handleCommitImport = () => {
     for (const row of previewRows) {
-      if (row.isDuplicate) continue; // Skip duplicates (Scenario 5)
+      if (row.isDuplicate) continue;
 
-      // Learning loop: if user modified category, learn rule for future imports (Scenario 4)
       if (row.isUserModified && row.suggestedCategoryId !== row.originalSuggestedCategoryId) {
         storage.learnCategoryRule(account.id, row.payee, row.suggestedCategoryId);
       }
@@ -183,41 +181,48 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="bg-[#141a16] border border-[#232e26] rounded-xl max-w-2xl w-full p-6 text-[#f1f5f2] shadow-2xl flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-3xl max-w-2xl w-full p-6 text-[var(--nothing-text)] flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#232e26] pb-3 mb-4">
+        <div className="flex items-center justify-between border-b border-[var(--nothing-border)] pb-3 mb-4">
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-[#adebb3]" />
-            <h3 className="font-semibold text-base text-[#f1f5f2]">
-              Kontoauszug importieren ({account.nickname})
-            </h3>
+            <FileSpreadsheet className="w-5 h-5 text-[#D71921]" />
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--nothing-muted)]">STATEMENT // IMPORT</p>
+              <h3 className="font-bold text-base text-[var(--nothing-text)]">
+                Kontoauszug importieren ({account.nickname})
+              </h3>
+            </div>
           </div>
-          <button onClick={onClose} className="text-[#8c9e91] hover:text-[#f1f5f2]">
-            <X className="w-5 h-5" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center justify-center cursor-pointer transition-colors"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Profile Selector */}
-        <div className="mb-4 bg-[#0d110e] border border-[#232e26] p-3 rounded-lg flex items-center justify-between">
+        <div className="mb-4 bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-3.5 rounded-2xl flex items-center justify-between">
           <div>
-            <span className="block text-[11px] font-semibold text-[#8c9e91] uppercase tracking-wider">
+            <span className="block font-mono text-[9px] font-semibold text-[var(--nothing-muted)] uppercase tracking-wider">
               Aktive Import-Vorlage
             </span>
             <select
               value={selectedProfileId}
               onChange={(e) => setSelectedProfileId(e.target.value)}
-              className="bg-transparent text-sm font-semibold text-[#adebb3] focus:outline-none cursor-pointer mt-0.5"
+              className="bg-transparent font-mono text-xs font-bold text-[var(--nothing-text)] focus:outline-none cursor-pointer mt-0.5"
             >
               {profiles.map((p) => (
-                <option key={p.id} value={p.id} className="bg-[#141a16] text-[#f1f5f2]">
+                <option key={p.id} value={p.id} className="bg-[var(--nothing-surface)] text-[var(--nothing-text)]">
                   {p.profileName}
                 </option>
               ))}
             </select>
           </div>
-          <div className="text-right text-[11px] text-[#8c9e91]">
-            <span>Trennzeichen: Semikolon (;) • Format: DD.MM.YYYY</span>
+          <div className="text-right font-mono text-[10px] text-[var(--nothing-muted)]">
+            <span>Trennzeichen: (;) • Format: DD.MM.YYYY</span>
           </div>
         </div>
 
@@ -233,14 +238,14 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
             />
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-[#232e26] hover:border-[#adebb3]/50 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-[#0d110e]/40"
+              className="border-2 border-dashed border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] rounded-3xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-[var(--nothing-subsurface)]/50"
             >
-              <Upload className="w-8 h-8 text-[#adebb3] mb-3" />
-              <p className="text-sm font-medium text-[#f1f5f2]">
-                Echte CSV- oder OFX-Datei hier ablegen oder klicken
+              <Upload className="w-8 h-8 text-[#D71921] mb-3" />
+              <p className="font-mono text-xs uppercase tracking-wider font-semibold text-[var(--nothing-text)]">
+                CSV- oder OFX-Datei hier ablegen oder klicken
               </p>
-              <p className="text-xs text-[#8c9e91] mt-1">
-                Wird client-seitig verarbeitet — keine Daten verlassen deinen Rechner
+              <p className="font-mono text-[10px] text-[var(--nothing-muted)] mt-1">
+                Client-seitig verarbeitet — 100% offline
               </p>
             </div>
 
@@ -248,67 +253,68 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
               <button
                 type="button"
                 onClick={handleSimulateSample}
-                className="text-xs text-[#adebb3] hover:underline inline-flex items-center gap-1.5"
+                className="font-mono text-xs uppercase tracking-wider text-[var(--nothing-text)] hover:underline inline-flex items-center gap-1.5 cursor-pointer font-semibold"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Oder Trade Republic Test-Kontoauszug laden</span>
+                <Sparkles className="w-3.5 h-3.5 text-[#D71921]" />
+                <span>Trade Republic Test-Auszug laden</span>
               </button>
             </div>
 
             {isProcessing && (
-              <div className="flex items-center justify-center gap-2 text-xs text-[#adebb3] py-2">
-                <Sparkles className="w-4 h-4 animate-spin" />
-                <span>Ollama SLM kategorisiert Buchungen lokal...</span>
+              <div className="flex items-center justify-center gap-2 font-mono text-xs text-[var(--nothing-text)] py-2">
+                <Sparkles className="w-4 h-4 animate-spin text-[#D71921]" />
+                <span>Ollama SLM analysiert Buchungen lokal...</span>
               </div>
             )}
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto my-2">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-[#8c9e91]">
-                {previewRows.length} Buchungen erkannt — Vorschau & KI-Zuordnung:
+              <span className="font-mono text-xs uppercase tracking-wider text-[var(--nothing-muted)] font-semibold">
+                {previewRows.length} Buchungen erkannt:
               </span>
               <button
+                type="button"
                 onClick={() => setPreviewRows([])}
-                className="text-xs text-[#8c9e91] hover:text-[#f1f5f2]"
+                className="font-mono text-xs text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] cursor-pointer"
               >
                 Andere Datei wählen
               </button>
             </div>
 
             <table className="w-full text-xs text-left border-collapse">
-              <thead className="bg-[#0d110e] text-[#8c9e91] uppercase text-[10px] border-b border-[#232e26]">
+              <thead className="bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)] uppercase font-mono text-[10px] border-b border-[var(--nothing-border)]">
                 <tr>
                   <th className="py-2 px-3">Datum</th>
                   <th className="py-2 px-3">Empfänger</th>
                   <th className="py-2 px-3 text-right">Betrag</th>
-                  <th className="py-2 px-3">Kategorie-Vorschlag</th>
+                  <th className="py-2 px-3">Kategorie</th>
                 </tr>
               </thead>
               <tbody>
                 {previewRows.map((row, idx) => (
                   <tr
                     key={row.id}
-                    className={`border-b border-[#232e26]/50 ${
-                      row.isDuplicate ? 'opacity-50 bg-[#1b241e]/20' : ''
+                    className={`border-b border-[var(--nothing-border)] ${
+                      row.isDuplicate ? 'opacity-50 bg-[var(--nothing-subsurface)]' : ''
                     }`}
                   >
-                    <td className="py-2 px-3 font-mono text-[#8c9e91]">{row.date}</td>
-                    <td className="py-2 px-3 font-medium text-[#f1f5f2]">{row.payee}</td>
+                    <td className="py-2 px-3 font-mono text-[var(--nothing-muted)]">{row.date}</td>
+                    <td className="py-2 px-3 font-medium text-[var(--nothing-text)]">{row.payee}</td>
                     <td
-                      className={`py-2 px-3 text-right font-mono tabular-nums ${
-                        row.amountCents < 0 ? 'text-[#e8706d]' : 'text-[#adebb3]'
+                      className={`py-2 px-3 text-right font-mono tabular-nums font-semibold ${
+                        row.amountCents < 0 ? 'text-[#D71921]' : 'text-[var(--nothing-sage)]'
                       }`}
                     >
                       {formatCurrency(row.amountCents)}
                     </td>
                     <td className="py-2 px-3">
                       {row.isDuplicate ? (
-                        <span className="text-[10px] bg-[#e8706d]/15 border border-[#e8706d]/30 text-[#e8706d] px-2 py-0.5 rounded font-mono">
-                          Duplikat - Übersprungen
+                        <span className="font-mono text-[10px] bg-[#D71921]/15 border border-[#D71921]/30 text-[#D71921] px-2 py-0.5 rounded-full uppercase">
+                          Duplikat
                         </span>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <select
                             value={row.suggestedCategoryId}
                             onChange={(e) => {
@@ -318,7 +324,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                               newRows[idx].isUserModified = true;
                               setPreviewRows(newRows);
                             }}
-                            className="bg-[#0d110e] border border-[#232e26] rounded px-2 py-0.5 text-xs text-[#f1f5f2]"
+                            className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-xl px-2 py-0.5 text-xs text-[var(--nothing-text)] font-sans"
                           >
                             {categories.map((c) => (
                               <option key={c.id} value={c.id}>
@@ -328,15 +334,15 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                           </select>
                           {row.matchType === 'ollama' && (
                             <span
-                              className="text-[10px] bg-[#adebb3]/15 text-[#adebb3] px-1.5 py-0.5 rounded font-medium flex items-center gap-1"
+                              className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] flex items-center gap-1"
                               title={row.ruleInfo}
                             >
-                              <Sparkles className="w-2.5 h-2.5" /> KI
+                              <Sparkles className="w-2.5 h-2.5 text-[#D71921]" /> KI
                             </span>
                           )}
                           {row.matchType === 'rule' && (
                             <span
-                              className="text-[10px] bg-[#232e26] text-[#8c9e91] px-1.5 py-0.5 rounded font-medium"
+                              className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)]"
                               title={row.ruleInfo}
                             >
                               Regel
@@ -344,8 +350,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                           )}
                           {row.isUserModified && (
                             <span
-                              className="text-[10px] bg-[#adebb3]/20 text-[#adebb3] px-1 py-0.5 rounded font-mono"
-                              title="Wird für zukünftige Importe gelernt"
+                              className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-surface)] text-[var(--nothing-text)] font-semibold"
                             >
                               Gelernt
                             </span>
@@ -361,31 +366,31 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
         )}
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-[#232e26] mt-auto">
-          <span className="text-xs text-[#8c9e91]">
-            100% lokal verarbeitet • Keine Bankverbindungen erforderlich
+        <div className="flex items-center justify-between pt-4 border-t border-[var(--nothing-border)] mt-auto">
+          <span className="font-mono text-[10px] text-[var(--nothing-muted)] uppercase tracking-wider">
+            100% lokal verarbeitet
           </span>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-[#8c9e91] hover:text-[#f1f5f2]"
+              className="px-4 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
             >
               Abbrechen
             </button>
             <button
+              type="button"
               disabled={previewRows.filter((r) => !r.isDuplicate).length === 0}
               onClick={handleCommitImport}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-all cursor-pointer ${
                 previewRows.filter((r) => !r.isDuplicate).length > 0
-                  ? 'bg-[#adebb3] text-[#0d110e] hover:bg-[#adebb3]/90'
-                  : 'bg-[#232e26] text-[#4c5950] cursor-not-allowed'
+                  ? 'bg-[#D71921] text-white hover:opacity-90'
+                  : 'bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)] border border-[var(--nothing-border)] cursor-not-allowed opacity-50'
               }`}
             >
               <Check className="w-3.5 h-3.5" />
               <span>
-                {previewRows.filter((r) => !r.isDuplicate).length} Buchungen übernehmen
-                {previewRows.filter((r) => r.isDuplicate).length > 0 &&
-                  ` (${previewRows.filter((r) => r.isDuplicate).length} übersprungen)`}
+                {previewRows.filter((r) => !r.isDuplicate).length} Übernehmen
               </span>
             </button>
           </div>

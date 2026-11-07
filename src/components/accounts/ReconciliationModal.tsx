@@ -40,25 +40,32 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
   const discrepancyCents = parsedStatementCents - account.clearedBalanceCents;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="bg-[#141a16] border border-[#232e26] rounded-xl max-w-sm w-full p-6 text-[#f1f5f2] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#232e26] pb-3 mb-4">
-          <h3 className="font-semibold text-sm text-[#f1f5f2]">Konto abstimmen</h3>
-          <button onClick={onClose} className="text-[#8c9e91] hover:text-[#f1f5f2]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-3xl max-w-sm w-full p-6 text-[var(--nothing-text)]">
+        <div className="flex items-center justify-between border-b border-[var(--nothing-border)] pb-3 mb-4">
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--nothing-muted)]">RECONCILIATION // VERIFY</p>
+            <h3 className="font-bold text-base text-[var(--nothing-text)]">Konto abstimmen</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center justify-center cursor-pointer transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {step === 'prompt' ? (
           <div className="space-y-4 text-center">
-            <p className="text-xs text-[#8c9e91]">
+            <p className="font-mono text-xs text-[var(--nothing-muted)]">
               Stimmt der aktuelle bestätigte Saldo auf deinem Bankauszug überein?
             </p>
-            <div className="text-2xl font-bold font-mono text-[#adebb3] py-2 tabular-nums">
+            <div className="text-3xl font-bold font-mono text-[var(--nothing-text)] py-2 tabular-nums">
               {formatCurrency(account.clearedBalanceCents)}
             </div>
 
-            <div className="flex items-center justify-center gap-1 text-[11px] text-[#8c9e91] hover:text-[#f1f5f2] cursor-pointer">
+            <div className="flex items-center justify-center gap-1 font-mono text-[11px] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] cursor-pointer">
               <HelpCircle className="w-3.5 h-3.5" />
               <span>Wie finde ich meinen Kontostand?</span>
             </div>
@@ -67,14 +74,14 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
               <button
                 type="button"
                 onClick={() => setStep('mismatch')}
-                className="py-2 px-3 border border-[#232e26] hover:bg-[#1b241e] text-[#8c9e91] rounded-md text-xs font-semibold"
+                className="py-2 px-3 border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
               >
                 Nein, weicht ab
               </button>
               <button
                 type="button"
                 onClick={handleConfirmMatch}
-                className="py-2 px-3 bg-[#adebb3] hover:bg-[#adebb3]/90 text-[#0d110e] rounded-md text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                className="py-2 px-3 bg-[#D71921] hover:opacity-90 text-white rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-opacity flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <CheckCircle className="w-4 h-4" />
                 <span>Ja, stimmt</span>
@@ -84,8 +91,8 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
         ) : (
           <form onSubmit={handleMismatchSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-[#8c9e91] mb-1.5">
-                Tatsächlicher Saldo laut Kontoauszug (EUR)
+              <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1.5">
+                Tatsächlicher Saldo laut Auszug (EUR)
               </label>
               <input
                 autoFocus
@@ -93,29 +100,29 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
                 placeholder="0,00"
                 value={statementBalanceStr}
                 onChange={(e) => setStatementBalanceStr(e.target.value)}
-                className="w-full bg-[#0d110e] border border-[#232e26] focus:border-[#adebb3] rounded-md px-3 py-2 text-sm text-[#f1f5f2] focus:outline-none font-mono"
+                className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] focus:outline-none font-mono tabular-nums"
               />
             </div>
 
             {statementBalanceStr.trim() !== '' && (
-              <div className="bg-[#0d110e] border border-[#232e26] p-3 rounded text-xs space-y-1">
-                <div className="flex justify-between text-[#8c9e91]">
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-3 rounded-2xl text-xs space-y-1 font-mono">
+                <div className="flex justify-between text-[var(--nothing-muted)]">
                   <span>Bestätigter Saldo:</span>
-                  <span className="font-mono">{formatCurrency(account.clearedBalanceCents)}</span>
+                  <span>{formatCurrency(account.clearedBalanceCents)}</span>
                 </div>
-                <div className="flex justify-between text-[#8c9e91]">
+                <div className="flex justify-between text-[var(--nothing-muted)]">
                   <span>Auszug-Saldo:</span>
-                  <span className="font-mono">{formatCurrency(parsedStatementCents)}</span>
+                  <span>{formatCurrency(parsedStatementCents)}</span>
                 </div>
-                <div className="flex justify-between pt-1 border-t border-[#232e26] font-semibold">
+                <div className="flex justify-between pt-1 border-t border-[var(--nothing-border)] font-bold">
                   <span>Differenz:</span>
                   <span
-                    className={`font-mono tabular-nums ${
+                    className={`tabular-nums ${
                       discrepancyCents === 0
-                        ? 'text-[#adebb3]'
+                        ? 'text-[var(--nothing-sage)]'
                         : discrepancyCents < 0
-                        ? 'text-[#e8706d]'
-                        : 'text-[#adebb3]'
+                        ? 'text-[#D71921]'
+                        : 'text-[var(--nothing-sage)]'
                     }`}
                   >
                     {formatCurrency(discrepancyCents)}
@@ -124,19 +131,19 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#232e26]">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--nothing-border)]">
               <button
                 type="button"
                 onClick={() => setStep('prompt')}
-                className="px-3 py-1.5 text-xs text-[#8c9e91]"
+                className="px-4 py-1.5 text-xs font-mono uppercase tracking-wider text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] cursor-pointer"
               >
                 Zurück
               </button>
               <button
                 type="submit"
-                className="px-3 py-1.5 bg-[#adebb3] text-[#0d110e] text-xs font-bold rounded hover:bg-[#adebb3]/90"
+                className="px-4 py-1.5 bg-[#D71921] text-white text-xs font-mono uppercase tracking-wider font-semibold rounded-full hover:opacity-90 transition-opacity cursor-pointer"
               >
-                Korrekturbuchung erzeugen & abschließen
+                Korrekturbuchung erzeugen
               </button>
             </div>
           </form>
@@ -145,4 +152,3 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
     </div>
   );
 };
-

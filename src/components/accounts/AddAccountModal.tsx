@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AccountType } from '../../types';
 import { parseCurrencyInput } from '../../services/currency';
 import { storage } from '../../services/storage';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 interface AddAccountModalProps {
   isOpen: boolean;
@@ -48,38 +48,46 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      <div className="bg-[#141a16] border border-[#232e26] rounded-xl max-w-md w-full p-6 text-[#f1f5f2] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#232e26] pb-3 mb-4">
-          <h3 className="font-semibold text-base text-[#f1f5f2]">Konto hinzufügen</h3>
-          <button onClick={onClose} className="text-[#8c9e91] hover:text-[#f1f5f2]">
-            <X className="w-5 h-5" />
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-3xl max-w-md w-full p-6 text-[var(--nothing-text)]">
+        <div className="flex items-center justify-between border-b border-[var(--nothing-border)] pb-3 mb-4">
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--nothing-muted)]">LEDGER // SETUP</p>
+            <h3 className="font-bold text-base text-[var(--nothing-text)]">Konto hinzufügen</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center justify-center cursor-pointer transition-colors"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#8c9e91] mb-1.5">
+            <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
               Kontobezeichnung
             </label>
             <input
               type="text"
               required
+              autoFocus
               placeholder="z.B. Trade Republic, DKB Girokonto"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              className="w-full bg-[#0d110e] border border-[#232e26] focus:border-[#adebb3] rounded-md px-3 py-2 text-sm text-[#f1f5f2] focus:outline-none"
+              className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#8c9e91] mb-1.5">
+            <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
               Kontotyp
             </label>
             <select
               value={accountType}
               onChange={(e) => setAccountType(e.target.value as AccountType)}
-              className="w-full bg-[#0d110e] border border-[#232e26] focus:border-[#adebb3] rounded-md px-3 py-2 text-sm text-[#f1f5f2] focus:outline-none"
+              className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] focus:outline-none"
             >
               <optgroup label="Barkonten">
                 <option value="checking">Girokonto</option>
@@ -98,34 +106,32 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#8c9e91] mb-1.5">
-              Aktueller Kontostand (EUR)
+            <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
+              Startsaldo (EUR)
             </label>
             <input
               type="text"
               placeholder="0,00"
               value={balanceStr}
               onChange={(e) => setBalanceStr(e.target.value)}
-              className="w-full bg-[#0d110e] border border-[#232e26] focus:border-[#adebb3] rounded-md px-3 py-2 text-sm text-[#f1f5f2] focus:outline-none font-mono"
+              className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] font-mono tabular-nums focus:outline-none"
             />
-            <p className="text-[11px] text-[#8c9e91] mt-1">
-              Erzeugt automatisch eine Anfangssaldo-Buchung im Kontobuch.
-            </p>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#232e26]">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nothing-border)]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-md text-xs font-medium text-[#8c9e91] hover:text-[#f1f5f2]"
+              className="px-4 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
             >
               Abbrechen
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#adebb3] text-[#0d110e] font-semibold rounded-md text-xs hover:bg-[#adebb3]/90 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D71921] text-white rounded-full font-mono text-xs uppercase tracking-wider font-semibold hover:opacity-90 transition-opacity cursor-pointer"
             >
-              Konto anlegen
+              <Plus className="w-3.5 h-3.5" />
+              <span>Anlegen</span>
             </button>
           </div>
         </form>
@@ -133,4 +139,3 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
     </div>
   );
 };
-

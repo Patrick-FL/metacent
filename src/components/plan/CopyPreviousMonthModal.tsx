@@ -32,7 +32,7 @@ export const CopyPreviousMonthModal: React.FC<CopyPreviousMonthModalProps> = ({
 
   const formatMonthTitle = (monthKey: string) => {
     const [y, m] = monthKey.split('-');
-    const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+    const monthNames = ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'];
     return `${monthNames[parseInt(m, 10) - 1]} ${y}`;
   };
 
@@ -65,19 +65,23 @@ export const CopyPreviousMonthModal: React.FC<CopyPreviousMonthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-      <div className="bg-[#141a16] border border-[#232e26] rounded-xl max-w-md w-full p-5 text-[#f1f5f2] shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-3xl max-w-md w-full p-6 text-[var(--nothing-text)] flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#232e26] pb-3 mb-4">
+        <div className="flex items-center justify-between border-b border-[var(--nothing-border)] pb-3 mb-4">
           <div className="flex items-center gap-2">
-            <Copy className="w-4 h-4 text-[#adebb3]" />
-            <h3 className="font-semibold text-sm text-[#f1f5f2]">
-              Zuweisungen aus Vormonat übernehmen
-            </h3>
+            <Copy className="w-4 h-4 text-[#D71921]" />
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--nothing-muted)]">ROLLOVER // ASSIGNMENT</p>
+              <h3 className="font-bold text-base text-[var(--nothing-text)]">
+                Vormonat übernehmen
+              </h3>
+            </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-[#8c9e91] hover:text-[#f1f5f2] transition-colors p-1"
+            className="w-7 h-7 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center justify-center cursor-pointer transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -85,13 +89,14 @@ export const CopyPreviousMonthModal: React.FC<CopyPreviousMonthModalProps> = ({
 
         {/* Content */}
         {categoriesToCopy.length === 0 ? (
-          <div className="py-6 text-center space-y-3">
-            <p className="text-xs text-[#8c9e91]">
-              Im Vormonat (<strong className="text-[#f1f5f2]">{formatMonthTitle(previousMonth)}</strong>) wurden bisher keine Zuweisungen getätigt.
+          <div className="py-6 text-center space-y-3 font-mono">
+            <p className="text-xs text-[var(--nothing-muted)]">
+              Im Vormonat ({formatMonthTitle(previousMonth)}) wurden keine Zuweisungen getätigt.
             </p>
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-1.5 bg-[#232e26] text-xs text-[#f1f5f2] rounded hover:bg-[#2c3a30] transition-colors"
+              className="px-4 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] text-xs font-semibold uppercase tracking-wider cursor-pointer"
             >
               Schließen
             </button>
@@ -99,29 +104,29 @@ export const CopyPreviousMonthModal: React.FC<CopyPreviousMonthModalProps> = ({
         ) : (
           <div className="space-y-4 overflow-y-auto pr-1 flex-1">
             {/* Month Transfer Flow Banner */}
-            <div className="flex items-center justify-between bg-[#0d110e] border border-[#232e26] rounded-lg p-3 text-xs">
+            <div className="flex items-center justify-between bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-3 text-xs font-mono">
               <div className="space-y-0.5">
-                <span className="text-[10px] text-[#8c9e91] uppercase tracking-wider block">Quelle</span>
-                <span className="font-semibold text-[#f1f5f2]">{formatMonthTitle(previousMonth)}</span>
+                <span className="text-[9px] text-[var(--nothing-muted)] uppercase tracking-wider block">Quelle</span>
+                <span className="font-bold text-[var(--nothing-text)]">{formatMonthTitle(previousMonth)}</span>
               </div>
-              <ArrowRight className="w-4 h-4 text-[#adebb3]" />
+              <ArrowRight className="w-4 h-4 text-[#D71921]" />
               <div className="space-y-0.5 text-right">
-                <span className="text-[10px] text-[#8c9e91] uppercase tracking-wider block">Ziel</span>
-                <span className="font-semibold text-[#adebb3]">{formatMonthTitle(currentMonth)}</span>
+                <span className="text-[9px] text-[var(--nothing-muted)] uppercase tracking-wider block">Ziel</span>
+                <span className="font-bold text-[var(--nothing-text)]">{formatMonthTitle(currentMonth)}</span>
               </div>
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-[#0d110e] border border-[#232e26] rounded-lg p-2.5">
-                <div className="text-[10px] text-[#8c9e91] uppercase">Kategorien</div>
-                <div className="text-sm font-semibold font-mono text-[#f1f5f2] mt-0.5">
+            <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-3">
+                <div className="text-[9px] text-[var(--nothing-muted)] uppercase">Kategorien</div>
+                <div className="text-base font-bold text-[var(--nothing-text)] mt-0.5 tabular-nums">
                   {categoriesToCopy.length}
                 </div>
               </div>
-              <div className="bg-[#0d110e] border border-[#232e26] rounded-lg p-2.5">
-                <div className="text-[10px] text-[#8c9e91] uppercase">Gesamtsumme</div>
-                <div className="text-sm font-semibold font-mono text-[#adebb3] mt-0.5">
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-3">
+                <div className="text-[9px] text-[var(--nothing-muted)] uppercase">Gesamtsumme</div>
+                <div className="text-base font-bold text-[var(--nothing-text)] mt-0.5 tabular-nums">
                   {formatCurrency(totalPreviousCents)}
                 </div>
               </div>
@@ -129,52 +134,52 @@ export const CopyPreviousMonthModal: React.FC<CopyPreviousMonthModalProps> = ({
 
             {/* Overwrite Option if target month already has data */}
             {currentMonthHasAssignments && (
-              <div className="bg-[#0d110e] border border-[#232e26] rounded-lg p-3 space-y-2">
-                <span className="text-[11px] font-semibold text-[#f1f5f2] block">
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-3 space-y-2">
+                <span className="text-xs font-semibold text-[var(--nothing-text)] block font-mono">
                   Bestehende Zuweisungen in {formatMonthTitle(currentMonth)}
                 </span>
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-[#8c9e91] hover:text-[#f1f5f2]">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--nothing-muted)] hover:text-[var(--nothing-text)]">
                   <input
                     type="radio"
                     name="overwrite"
                     checked={overwriteExisting}
                     onChange={() => setOverwriteExisting(true)}
-                    className="accent-[#adebb3]"
+                    className="accent-[#D71921]"
                   />
-                  <span>Alle Kategorien mit Vormonatswerten überschreiben</span>
+                  <span>Alle Kategorien mit Werten aus Vormonat überschreiben</span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-[#8c9e91] hover:text-[#f1f5f2]">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--nothing-muted)] hover:text-[var(--nothing-text)]">
                   <input
                     type="radio"
                     name="overwrite"
                     checked={!overwriteExisting}
                     onChange={() => setOverwriteExisting(false)}
-                    className="accent-[#adebb3]"
+                    className="accent-[#D71921]"
                   />
-                  <span>Nur unbesetzte (0,00 €) Kategorien befüllen</span>
+                  <span>Nur unbesetzte Kategorien befüllen</span>
                 </label>
               </div>
             )}
 
             {/* Preview List */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8c9e91] block">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--nothing-muted)] block">
                 Vorschau ({categoriesToCopy.length})
               </span>
-              <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#232e26] rounded-lg p-2 bg-[#0d110e]/70">
+              <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[var(--nothing-border)] rounded-2xl p-2.5 bg-[var(--nothing-subsurface)]">
                 {categoriesToCopy.map(({ category, prevAssignedCents, currAssignedCents }) => (
                   <div
                     key={category.id}
-                    className="flex items-center justify-between text-xs py-1 px-1.5 rounded hover:bg-[#141a16]"
+                    className="flex items-center justify-between text-xs py-1 px-2 rounded-lg hover:bg-[var(--nothing-surface)] transition-colors"
                   >
-                    <span className="truncate text-[#f1f5f2] font-medium">{category.name}</span>
-                    <div className="flex items-center gap-2 font-mono text-[11px]">
+                    <span className="truncate text-[var(--nothing-text)] font-medium">{category.name}</span>
+                    <div className="flex items-center gap-2 font-mono text-[11px] tabular-nums">
                       {currAssignedCents > 0 && overwriteExisting && (
-                        <span className="text-[#8c9e91] line-through">
+                        <span className="text-[var(--nothing-muted)] line-through">
                           {formatCurrency(currAssignedCents)}
                         </span>
                       )}
-                      <span className="text-[#adebb3]">
+                      <span className="font-bold text-[var(--nothing-text)]">
                         {formatCurrency(prevAssignedCents)}
                       </span>
                     </div>
@@ -184,21 +189,21 @@ export const CopyPreviousMonthModal: React.FC<CopyPreviousMonthModalProps> = ({
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#232e26]">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nothing-border)]">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 text-xs text-[#8c9e91] hover:text-[#f1f5f2] transition-colors"
+                className="px-4 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
               >
                 Abbrechen
               </button>
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#adebb3] text-[#0d110e] font-semibold text-xs rounded hover:bg-[#adebb3]/90 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D71921] text-white font-mono text-xs uppercase tracking-wider font-semibold rounded-full hover:opacity-90 transition-opacity cursor-pointer"
               >
                 <Check className="w-3.5 h-3.5" />
-                <span>Zuweisungen übernehmen</span>
+                <span>Übernehmen</span>
               </button>
             </div>
           </div>
@@ -207,4 +212,3 @@ export const CopyPreviousMonthModal: React.FC<CopyPreviousMonthModalProps> = ({
     </div>
   );
 };
-

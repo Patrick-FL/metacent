@@ -117,27 +117,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-      <div className="bg-[#141a16] border border-[#232e26] rounded-xl max-w-2xl w-full p-6 text-[#f1f5f2] shadow-2xl flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-3xl max-w-2xl w-full p-6 text-[var(--nothing-text)] flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#232e26] pb-3 mb-4">
-          <div className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-[#adebb3]" />
-            <h3 className="font-semibold text-base text-[#f1f5f2]">Einstellungen</h3>
+        <div className="flex items-center justify-between border-b border-[var(--nothing-border)] pb-3 mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] flex items-center justify-center text-[var(--nothing-text)]">
+              <Settings className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--nothing-muted)]">CONFIGURATION // PREFERENCES</p>
+              <h3 className="font-bold text-base text-[var(--nothing-text)]">Einstellungen</h3>
+            </div>
           </div>
-          <button onClick={onClose} className="text-[#8c9e91] hover:text-[#f1f5f2]">
-            <X className="w-5 h-5" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center justify-center cursor-pointer transition-colors"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 border-b border-[#232e26] pb-3 mb-4 text-xs">
+        <div className="flex items-center gap-1.5 border-b border-[var(--nothing-border)] pb-3 mb-4 text-xs font-mono uppercase tracking-wider">
           <button
+            type="button"
             onClick={() => setActiveTab('ai')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
               activeTab === 'ai'
-                ? 'bg-[#1b241e] text-[#adebb3] border border-[#adebb3]/30 font-medium'
-                : 'text-[#8c9e91] hover:text-[#f1f5f2]'
+                ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-semibold'
+                : 'text-[var(--nothing-muted)] hover:text-[var(--nothing-text)]'
             }`}
           >
             <Bot className="w-3.5 h-3.5" />
@@ -145,11 +155,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('backup')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
               activeTab === 'backup'
-                ? 'bg-[#1b241e] text-[#adebb3] border border-[#adebb3]/30 font-medium'
-                : 'text-[#8c9e91] hover:text-[#f1f5f2]'
+                ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-semibold'
+                : 'text-[var(--nothing-muted)] hover:text-[var(--nothing-text)]'
             }`}
           >
             <HardDrive className="w-3.5 h-3.5" />
@@ -157,11 +168,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('budget')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
               activeTab === 'budget'
-                ? 'bg-[#1b241e] text-[#adebb3] border border-[#adebb3]/30 font-medium'
-                : 'text-[#8c9e91] hover:text-[#f1f5f2]'
+                ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-semibold'
+                : 'text-[var(--nothing-muted)] hover:text-[var(--nothing-text)]'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -169,11 +181,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('info')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
               activeTab === 'info'
-                ? 'bg-[#1b241e] text-[#adebb3] border border-[#adebb3]/30 font-medium'
-                : 'text-[#8c9e91] hover:text-[#f1f5f2]'
+                ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-semibold'
+                : 'text-[var(--nothing-muted)] hover:text-[var(--nothing-text)]'
             }`}
           >
             <Info className="w-3.5 h-3.5" />
@@ -187,30 +200,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {activeTab === 'ai' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[#8c9e91] mb-1 font-medium">Ollama Server-URL</label>
+                <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
+                  Ollama Server-URL
+                </label>
                 <input
                   type="text"
                   value={settings.ollamaEndpoint}
                   onChange={(e) => setSettings({ ...settings, ollamaEndpoint: e.target.value })}
                   placeholder="http://localhost:11434"
-                  className="w-full bg-[#0d110e] border border-[#232e26] rounded px-3 py-2 text-[#f1f5f2] focus:outline-none focus:border-[#adebb3]"
+                  className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-xl px-3 py-2 text-[var(--nothing-text)] font-mono focus:outline-none focus:border-[var(--nothing-text)]"
                 />
-                <span className="text-[11px] text-[#8c9e91] mt-1 block">
+                <span className="font-mono text-[10px] text-[var(--nothing-muted)] mt-1 block">
                   Lokale SLMs laufen vollständig offline auf deinem Rechner ohne Cloud-Abhängigkeit.
                 </span>
               </div>
 
               <div>
-                <label className="block text-[#8c9e91] mb-1 font-medium">Standard-Modell für Kategorisierung</label>
+                <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
+                  Standard-Modell für Kategorisierung
+                </label>
                 <input
                   type="text"
                   value={settings.ollamaModel}
                   onChange={(e) => setSettings({ ...settings, ollamaModel: e.target.value })}
                   placeholder="llama3.2:3b"
-                  className="w-full bg-[#0d110e] border border-[#232e26] rounded px-3 py-2 text-[#f1f5f2] focus:outline-none focus:border-[#adebb3]"
+                  className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-xl px-3 py-2 text-[var(--nothing-text)] font-mono focus:outline-none focus:border-[var(--nothing-text)]"
                 />
-                <span className="text-[11px] text-[#8c9e91] mt-1 block">
-                  Empfohlene schlanke Modelle: llama3.2:3b, qwen2.5:3b, phi3.5, mistral:7b
+                <span className="font-mono text-[10px] text-[var(--nothing-muted)] mt-1 block">
+                  Empfohlene Modelle: llama3.2:3b, qwen2.5:3b, phi3.5, mistral:7b
                 </span>
               </div>
 
@@ -219,7 +236,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   type="button"
                   onClick={handleTestOllama}
                   disabled={ollamaStatus === 'testing'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1b241e] border border-[#232e26] hover:border-[#adebb3]/40 rounded text-xs text-[#adebb3] transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${ollamaStatus === 'testing' ? 'animate-spin' : ''}`} />
                   <span>Verbindung testen</span>
@@ -227,12 +244,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {ollamaStatus !== 'idle' && (
                   <div
-                    className={`mt-2 p-2 rounded text-xs flex items-start gap-2 ${
+                    className={`mt-2 p-3 rounded-2xl text-xs font-mono flex items-start gap-2 border ${
                       ollamaStatus === 'success'
-                        ? 'bg-[#adebb3]/10 border border-[#adebb3]/30 text-[#adebb3]'
+                        ? 'bg-[var(--nothing-sage)]/10 border-[var(--nothing-sage)]/30 text-[var(--nothing-sage)]'
                         : ollamaStatus === 'error'
-                        ? 'bg-[#e8706d]/10 border border-[#e8706d]/30 text-[#e8706d]'
-                        : 'bg-[#1b241e] text-[#8c9e91]'
+                        ? 'bg-[#D71921]/10 border-[#D71921]/30 text-[#D71921]'
+                        : 'bg-[var(--nothing-subsurface)] border-[var(--nothing-border)] text-[var(--nothing-muted)]'
                     }`}
                   >
                     {ollamaStatus === 'success' && <Check className="w-4 h-4 shrink-0 mt-0.5" />}
@@ -242,20 +259,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
               </div>
 
-              <div className="pt-3 border-t border-[#232e26]">
-                <label className="block text-[#8c9e91] mb-1 font-medium">
-                  OpenRouter API-Schlüssel (Optionaler Entscheidungsmodell-Fallback)
+              <div className="pt-3 border-t border-[var(--nothing-border)]">
+                <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
+                  OpenRouter API-Schlüssel (Optional)
                 </label>
                 <input
                   type="password"
                   value={settings.openRouterApiKey}
                   onChange={(e) => setSettings({ ...settings, openRouterApiKey: e.target.value })}
                   placeholder="sk-or-v1-..."
-                  className="w-full bg-[#0d110e] border border-[#232e26] rounded px-3 py-2 text-[#f1f5f2] focus:outline-none focus:border-[#adebb3]"
+                  className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-xl px-3 py-2 text-[var(--nothing-text)] font-mono focus:outline-none focus:border-[var(--nothing-text)]"
                 />
-                <span className="text-[11px] text-[#8c9e91] mt-1 block">
-                  Optional: Falls kein lokales Modell installiert ist oder komplexe Entscheidungsmodelle via OpenRouter gewünscht sind.
-                </span>
               </div>
             </div>
           )}
@@ -263,17 +277,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Backup & Data Tab */}
           {activeTab === 'backup' && (
             <div className="space-y-4">
-              <div className="bg-[#0d110e] border border-[#232e26] p-4 rounded-lg space-y-3">
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-4 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold text-[#f1f5f2]">Vollständiges Budget-Backup erstellen</h4>
-                    <p className="text-[11px] text-[#8c9e91]">
-                      Sichert alle Konten, Buchungen, Kategorien, Zielbeträge und Importprofile in einer JSON-Datei.
+                    <h4 className="font-bold text-[var(--nothing-text)]">Budget-Backup erstellen</h4>
+                    <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                      Sichert alle Konten, Buchungen und Kategorien als JSON.
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={handleExportBackup}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#adebb3] text-[#0d110e] font-semibold rounded hover:bg-[#adebb3]/90 transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#D71921] text-white rounded-full font-mono text-xs uppercase tracking-wider font-semibold hover:opacity-90 transition-opacity cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Exportieren</span>
@@ -281,12 +296,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
 
-              <div className="bg-[#0d110e] border border-[#232e26] p-4 rounded-lg space-y-3">
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-4 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold text-[#f1f5f2]">Budget aus Backup wiederherstellen</h4>
-                    <p className="text-[11px] text-[#8c9e91]">
-                      Ersetzt den aktuellen Stand durch ein zuvor exportiertes Backup.
+                    <h4 className="font-bold text-[var(--nothing-text)]">Backup wiederherstellen</h4>
+                    <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                      Ersetzt den aktuellen Stand durch ein Backup.
                     </p>
                   </div>
                   <div>
@@ -298,8 +313,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       className="hidden"
                     />
                     <button
+                      type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[#232e26] text-[#8c9e91] hover:text-[#f1f5f2] hover:border-[#adebb3]/40 rounded transition-colors"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-surface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
                     >
                       <Upload className="w-3.5 h-3.5" />
                       <span>Wiederherstellen</span>
@@ -308,16 +324,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
 
-              <div className="bg-[#0d110e] border border-[#e8706d]/20 p-4 rounded-lg space-y-2">
-                <h4 className="font-semibold text-[#e8706d]">Datenbank zurücksetzen</h4>
-                <p className="text-[11px] text-[#8c9e91]">
-                  Löscht alle erstellten Buchungen und stellt die ursprünglichen Demodaten wieder her.
+              <div className="bg-[var(--nothing-subsurface)] border border-[#D71921]/20 p-4 rounded-2xl space-y-2">
+                <h4 className="font-bold text-[#D71921]">Demodaten zurücksetzen</h4>
+                <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                  Löscht alle Buchungen und setzt auf Standard-Demodaten zurück.
                 </p>
                 <button
+                  type="button"
                   onClick={handleResetDemoData}
-                  className="px-3 py-1.5 border border-[#e8706d]/30 text-[#e8706d] hover:bg-[#e8706d]/10 rounded transition-colors text-xs"
+                  className="px-3.5 py-1.5 border border-[#D71921] text-[#D71921] hover:bg-[#D71921]/10 rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
                 >
-                  Demodaten wiederherstellen
+                  Zurücksetzen
                 </button>
               </div>
             </div>
@@ -327,11 +344,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {activeTab === 'budget' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[#8c9e91] mb-2 font-medium">
-                  Behandlung negativer Kategorie-Salden (Überziehung)
+                <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-2">
+                  Behandlung negativer Salden (Überziehung)
                 </label>
                 <div className="space-y-2">
-                  <label className="flex items-start gap-2 bg-[#0d110e] p-3 rounded border border-[#232e26] cursor-pointer hover:border-[#adebb3]/40">
+                  <label className="flex items-start gap-2.5 bg-[var(--nothing-subsurface)] p-3.5 rounded-2xl border border-[var(--nothing-border)] cursor-pointer hover:border-[var(--nothing-border-hover)]">
                     <input
                       type="radio"
                       name="rollover"
@@ -343,19 +360,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           negativeBalanceRollover: 'deduct_from_ready_to_assign',
                         })
                       }
-                      className="mt-0.5 accent-[#adebb3]"
+                      className="mt-0.5 accent-[#D71921]"
                     />
                     <div>
-                      <span className="font-medium text-[#f1f5f2] block">
-                        Vom Folgemonat abziehen (Empfohlen nach YNAB-Methode)
+                      <span className="font-semibold text-[var(--nothing-text)] block">
+                        Vom Folgemonat abziehen (Standard Zero-Based)
                       </span>
-                      <span className="text-[11px] text-[#8c9e91]">
-                        Überzogene Kategorien werden auf 0 gesetzt und verringern den Betrag „Bereit zur Zuweisung“ im nächsten Monat.
+                      <span className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                        Überzogene Kategorien verringern den Betrag „Bereit zur Zuweisung“ im Folgemonat.
                       </span>
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-2 bg-[#0d110e] p-3 rounded border border-[#232e26] cursor-pointer hover:border-[#adebb3]/40">
+                  <label className="flex items-start gap-2.5 bg-[var(--nothing-subsurface)] p-3.5 rounded-2xl border border-[var(--nothing-border)] cursor-pointer hover:border-[var(--nothing-border-hover)]">
                     <input
                       type="radio"
                       name="rollover"
@@ -367,14 +384,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           negativeBalanceRollover: 'rollover_into_category',
                         })
                       }
-                      className="mt-0.5 accent-[#adebb3]"
+                      className="mt-0.5 accent-[#D71921]"
                     />
                     <div>
-                      <span className="font-medium text-[#f1f5f2] block">
-                        In Kategorie übertragen (Negativer Saldovortrag)
+                      <span className="font-semibold text-[var(--nothing-text)] block">
+                        In Kategorie übertragen
                       </span>
-                      <span className="text-[11px] text-[#8c9e91]">
-                        Das Minus bleibt in der jeweiligen Kategorie bestehen und muss dort im Folgemonat ausgeglichen werden.
+                      <span className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                        Das Minus bleibt in der jeweiligen Kategorie bestehen.
                       </span>
                     </div>
                   </label>
@@ -386,30 +403,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* System Info Tab */}
           {activeTab === 'info' && (
             <div className="space-y-3 font-mono text-xs">
-              <div className="bg-[#0d110e] border border-[#232e26] p-4 rounded-lg space-y-2">
-                <div className="flex justify-between py-1 border-b border-[#232e26]">
-                  <span className="text-[#8c9e91]">Anwendung</span>
-                  <span className="text-[#adebb3] font-bold font-sans">metacent 0.1.0</span>
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-4 rounded-2xl space-y-2">
+                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
+                  <span className="text-[var(--nothing-muted)] uppercase">Anwendung</span>
+                  <span className="text-[var(--nothing-text)] font-bold">METACENT // 3.0</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[#232e26]">
-                  <span className="text-[#8c9e91]">Betriebssystem</span>
-                  <span className="text-[#f1f5f2]">Linux Mint OS / Cross-Platform</span>
+                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
+                  <span className="text-[var(--nothing-muted)] uppercase">Design Language</span>
+                  <span className="text-[var(--nothing-text)] font-bold">Nothing OS Desktop (Swiss Minimalist)</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[#232e26]">
-                  <span className="text-[#8c9e91]">Standardwährung</span>
-                  <span className="text-[#f1f5f2]">EUR (€) in Minor Integer Cents (i64)</span>
+                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
+                  <span className="text-[var(--nothing-muted)] uppercase">Währung</span>
+                  <span className="text-[var(--nothing-text)]">EUR (€) Minor Integer Cents (i64)</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[#232e26]">
-                  <span className="text-[#8c9e91]">Datenspeicherung</span>
-                  <span className="text-[#f1f5f2]">100% Offline (SQLite / Local Engine)</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#232e26]">
-                  <span className="text-[#8c9e91]">Bankverbindungen</span>
-                  <span className="text-[#adebb3]">Keine externen Logins / 100% Privatsphäre</span>
+                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
+                  <span className="text-[var(--nothing-muted)] uppercase">Speicherung</span>
+                  <span className="text-[var(--nothing-text)]">100% Offline (SQLite / Local Engine)</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-[#8c9e91]">Kategorie-Design</span>
-                  <span className="text-[#f1f5f2]">Typografie & Monochrome (Keine Emojis)</span>
+                  <span className="text-[var(--nothing-muted)] uppercase">Drop Shadows</span>
+                  <span className="text-[#D71921] font-bold">STRICTLY NONE</span>
                 </div>
               </div>
             </div>
@@ -419,10 +432,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Feedback message */}
         {feedbackMsg && (
           <div
-            className={`mt-3 p-2 rounded text-xs flex items-center gap-2 ${
+            className={`mt-3 p-2.5 rounded-full text-xs font-mono flex items-center gap-2 border ${
               feedbackMsg.type === 'success'
-                ? 'bg-[#adebb3]/10 border border-[#adebb3]/30 text-[#adebb3]'
-                : 'bg-[#e8706d]/10 border border-[#e8706d]/30 text-[#e8706d]'
+                ? 'bg-[var(--nothing-sage)]/10 border-[var(--nothing-sage)]/30 text-[var(--nothing-sage)]'
+                : 'bg-[#D71921]/10 border-[#D71921]/30 text-[#D71921]'
             }`}
           >
             {feedbackMsg.type === 'success' ? (
@@ -435,20 +448,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         )}
 
         {/* Footer Actions */}
-        <div className="pt-4 border-t border-[#232e26] mt-4 flex justify-between items-center text-xs">
-          <span className="text-[#8c9e91]">Änderungen werden lokal gespeichert.</span>
+        <div className="pt-4 border-t border-[var(--nothing-border)] mt-4 flex justify-between items-center text-xs">
+          <span className="font-mono text-[10px] text-[var(--nothing-muted)] uppercase tracking-wider">Lokale Speicherung</span>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onClose}
-              className="px-3 py-1.5 border border-[#232e26] text-[#8c9e91] hover:text-[#f1f5f2] rounded transition-colors"
+              className="px-4 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
             >
               Abbrechen
             </button>
             <button
+              type="button"
               onClick={handleSaveSettings}
-              className="px-4 py-1.5 bg-[#adebb3] text-[#0d110e] font-semibold rounded hover:bg-[#adebb3]/90 transition-colors"
+              className="px-4 py-1.5 bg-[#D71921] text-white rounded-full font-mono text-xs uppercase tracking-wider font-semibold hover:opacity-90 transition-opacity cursor-pointer"
             >
-              Einstellungen speichern
+              Speichern
             </button>
           </div>
         </div>
@@ -456,4 +471,3 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     </div>
   );
 };
-

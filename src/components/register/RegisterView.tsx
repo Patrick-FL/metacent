@@ -65,7 +65,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: filteredTransactions.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 36,
+    estimateSize: () => 38,
     overscan: 5,
   });
 
@@ -180,90 +180,97 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0d110e] text-[#f1f5f2]">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--nothing-bg)] text-[var(--nothing-text)] transition-colors">
       {/* Account Header */}
-      <header className="px-6 py-4 border-b border-[#232e26] flex items-center justify-between">
+      <header className="px-6 py-3.5 bg-[var(--nothing-surface)] border-b border-[var(--nothing-border)] flex items-center justify-between shrink-0 gap-4">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => {
               storage.updateAccount(account.id, { isFavorite: !account.isFavorite });
               onUpdate();
             }}
-            className="text-[#8c9e91] hover:text-[#adebb3] transition-colors"
+            className="text-[var(--nothing-muted)] hover:text-[#D71921] transition-colors cursor-pointer"
           >
-            <Star className={`w-5 h-5 ${account.isFavorite ? 'fill-[#adebb3] text-[#adebb3]' : ''}`} />
+            <Star className={`w-5 h-5 ${account.isFavorite ? 'fill-[#D71921] text-[#D71921]' : ''}`} />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-[#f1f5f2]">{account.nickname}</h2>
+              <h2 className="text-lg font-bold text-[var(--nothing-text)]">{account.nickname}</h2>
               <button
+                type="button"
                 onClick={onOpenEditAccount}
-                className="text-[#8c9e91] hover:text-[#adebb3] p-1 rounded transition-colors"
+                className="text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] p-1 rounded-full hover:bg-[var(--nothing-subsurface)] transition-colors cursor-pointer"
                 title="Konto bearbeiten"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
-              <span className="text-[10px] bg-[#141a16] border border-[#232e26] px-2 py-0.5 rounded text-[#8c9e91] uppercase">
+              <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)] font-medium">
                 {account.accountType}
               </span>
             </div>
-            <div className="text-xs text-[#8c9e91] mt-0.5 flex items-center gap-2">
+            <div className="font-mono text-[11px] text-[var(--nothing-muted)] mt-0.5 flex items-center gap-2">
               <span>
                 {account.lastReconciledAt
                   ? `Abgestimmt am ${new Date(account.lastReconciledAt).toLocaleDateString('de-DE')}`
                   : 'Noch nicht abgestimmt'}
               </span>
               <button
+                type="button"
                 onClick={onOpenReconcile}
-                className="text-[#adebb3] hover:underline flex items-center gap-1 text-[11px] font-medium"
+                className="text-[var(--nothing-text)] hover:underline flex items-center gap-1 font-semibold uppercase tracking-wider cursor-pointer"
               >
-                <CheckCheck className="w-3 h-3" /> Abstimmen (Shift+E)
+                <CheckCheck className="w-3.5 h-3.5 text-[var(--nothing-sage)]" /> Abstimmen (Shift+E)
               </button>
             </div>
           </div>
         </div>
 
-        {/* Live Balance Equation */}
-        <div className="flex items-center gap-2 font-mono text-sm tabular-nums bg-[#141a16] border border-[#232e26] px-4 py-2 rounded-lg">
+        {/* Live Balance Equation Bento Pill */}
+        <div className="flex items-center gap-2.5 font-mono text-xs tabular-nums bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] px-4 py-2 rounded-2xl">
           <div className="text-right">
-            <span className="text-[#adebb3] font-semibold">{formatCurrency(account.clearedBalanceCents)}</span>
-            <span className="block text-[9px] font-sans text-[#8c9e91] uppercase">Bestätigt</span>
+            <span className="text-[var(--nothing-sage)] font-bold">{formatCurrency(account.clearedBalanceCents)}</span>
+            <span className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">Bestätigt</span>
           </div>
-          <span className="text-[#8c9e91]">+</span>
+          <span className="text-[var(--nothing-muted)]">+</span>
           <div className="text-right">
-            <span className="text-[#8c9e91]">{formatCurrency(account.unclearedBalanceCents)}</span>
-            <span className="block text-[9px] font-sans text-[#8c9e91] uppercase">Offen</span>
+            <span className="text-[var(--nothing-muted)] font-semibold">{formatCurrency(account.unclearedBalanceCents)}</span>
+            <span className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">Offen</span>
           </div>
-          <span className="text-[#8c9e91]">=</span>
-          <div className="text-right pl-2 border-l border-[#232e26]">
-            <span className="text-[#f1f5f2] font-bold">{formatCurrency(account.workingBalanceCents)}</span>
-            <span className="block text-[9px] font-sans text-[#8c9e91] uppercase">Arbeitssaldo</span>
+          <span className="text-[var(--nothing-muted)]">=</span>
+          <div className="text-right pl-2.5 border-l border-[var(--nothing-border)]">
+            <span className="text-[var(--nothing-text)] font-bold text-sm">{formatCurrency(account.workingBalanceCents)}</span>
+            <span className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">Arbeitssaldo</span>
           </div>
         </div>
       </header>
 
       {/* Toolbar */}
-      <div className="px-6 py-2.5 border-b border-[#232e26] flex items-center justify-between gap-4">
+      <div className="px-6 py-2.5 bg-[var(--nothing-surface)] border-b border-[var(--nothing-border)] flex items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-2">
+          {/* Primary CTA: Nothing Red Pill */}
           <button
+            type="button"
             onClick={() => setIsAddingInline(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#adebb3] text-[#0d110e] rounded text-xs font-semibold hover:bg-[#adebb3]/90 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D71921] text-white rounded-full font-mono text-xs uppercase tracking-wider font-semibold hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Buchung hinzufügen (Shift+N)</span>
           </button>
 
           <button
+            type="button"
             onClick={onOpenFileImport}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-[#232e26] hover:border-[#adebb3]/40 rounded text-xs text-[#8c9e91] hover:text-[#f1f5f2] transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>Datei importieren</span>
           </button>
 
           {selectedTxId && (
-            <div className="flex items-center gap-1.5 pl-2 border-l border-[#232e26]">
+            <div className="flex items-center gap-1.5 pl-2 border-l border-[var(--nothing-border)]">
               <button
+                type="button"
                 onClick={() => {
                   const dup = storage.duplicateTransaction(selectedTxId);
                   if (dup) {
@@ -271,7 +278,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
                     onUpdate();
                   }
                 }}
-                className="flex items-center gap-1 px-2.5 py-1.5 border border-[#232e26] hover:border-[#adebb3]/40 rounded text-xs text-[#8c9e91] hover:text-[#adebb3] transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
                 title="Ausgewählte Buchung duplizieren (Shift+D)"
               >
                 <Copy className="w-3.5 h-3.5" />
@@ -279,8 +286,9 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
               </button>
 
               <button
+                type="button"
                 onClick={() => setIsSplitModalOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 border border-[#232e26] hover:border-[#adebb3]/40 rounded text-xs text-[#8c9e91] hover:text-[#adebb3] transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
                 title="Buchung aufteilen (S)"
               >
                 <Split className="w-3.5 h-3.5" />
@@ -288,12 +296,13 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   storage.deleteTransaction(selectedTxId);
                   setSelectedTxId(null);
                   onUpdate();
                 }}
-                className="flex items-center gap-1 px-2.5 py-1.5 border border-[#232e26] hover:border-[#e8706d]/40 rounded text-xs text-[#8c9e91] hover:text-[#e8706d] transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[#D71921] text-[#D71921] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
                 title="Buchung löschen (Delete)"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -308,7 +317,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-[#141a16] border border-[#232e26] rounded text-xs px-2.5 py-1.5 text-[#8c9e91] focus:outline-none"
+            className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-full text-xs font-mono uppercase tracking-wider px-3 py-1.5 text-[var(--nothing-text)] focus:outline-none focus:border-[var(--nothing-border-hover)]"
           >
             <option value="all">Alle Buchungen</option>
             <option value="uncleared">Nur Offene</option>
@@ -317,13 +326,13 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
           </select>
 
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#8c9e91]" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[var(--nothing-muted)]" />
             <input
               type="text"
               placeholder="Buchungen suchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-[#141a16] border border-[#232e26] rounded text-xs pl-8 pr-3 py-1.5 text-[#f1f5f2] placeholder-[#8c9e91] focus:outline-none focus:border-[#adebb3]"
+              className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-full text-xs pl-8 pr-3 py-1.5 text-[var(--nothing-text)] placeholder-[var(--nothing-muted)] focus:outline-none focus:border-[var(--nothing-border-hover)]"
             />
           </div>
         </div>
@@ -331,12 +340,12 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
 
       {/* Inline Entry Row (When active) */}
       {isAddingInline && (
-        <div className="bg-[#1b241e] border-b border-[#adebb3]/40 p-3 flex flex-wrap items-center gap-2 text-xs">
+        <div className="bg-[var(--nothing-subsurface)] border-b border-[var(--nothing-border)] p-3 flex flex-wrap items-center gap-2 text-xs">
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="bg-[#0d110e] border border-[#232e26] rounded px-2 py-1 text-[#f1f5f2]"
+            className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 text-[var(--nothing-text)] font-mono"
           />
           <input
             autoFocus
@@ -344,12 +353,12 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
             placeholder="Zahlungsempfänger"
             value={payee}
             onChange={(e) => setPayee(e.target.value)}
-            className="bg-[#0d110e] border border-[#232e26] rounded px-2 py-1 flex-1 min-w-[140px] text-[#f1f5f2]"
+            className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 flex-1 min-w-[140px] text-[var(--nothing-text)]"
           />
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="bg-[#0d110e] border border-[#232e26] rounded px-2 py-1 text-[#f1f5f2]"
+            className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 text-[var(--nothing-text)]"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -362,7 +371,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
             placeholder="Verwendungszweck"
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
-            className="bg-[#0d110e] border border-[#232e26] rounded px-2 py-1 flex-1 text-[#f1f5f2]"
+            className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 flex-1 text-[var(--nothing-text)]"
           />
           <input
             type="text"
@@ -372,7 +381,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
               setOutflowStr(e.target.value);
               if (e.target.value) setInflowStr('');
             }}
-            className="bg-[#0d110e] border border-[#232e26] rounded px-2 py-1 w-24 text-right text-[#e8706d] font-mono"
+            className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 w-24 text-right text-[#D71921] font-mono tabular-nums"
           />
           <input
             type="text"
@@ -382,25 +391,28 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
               setInflowStr(e.target.value);
               if (e.target.value) setOutflowStr('');
             }}
-            className="bg-[#0d110e] border border-[#232e26] rounded px-2 py-1 w-24 text-right text-[#adebb3] font-mono"
+            className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 w-24 text-right text-[var(--nothing-sage)] font-mono tabular-nums"
           />
 
           <div className="flex items-center gap-1.5 ml-auto">
             <button
+              type="button"
               onClick={() => handleSaveTransaction(false)}
-              className="px-3 py-1 bg-[#adebb3] text-[#0d110e] font-semibold rounded hover:bg-[#adebb3]/90"
+              className="px-4 py-1.5 bg-[#D71921] text-white font-mono text-xs uppercase tracking-wider font-semibold rounded-full hover:opacity-90 transition-opacity cursor-pointer"
             >
               Speichern
             </button>
             <button
+              type="button"
               onClick={() => handleSaveTransaction(true)}
-              className="px-2.5 py-1 bg-[#141a16] border border-[#232e26] text-[#8c9e91] hover:text-[#f1f5f2] rounded"
+              className="px-3 py-1.5 bg-[var(--nothing-surface)] border border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider rounded-full cursor-pointer"
             >
               Weitere
             </button>
             <button
+              type="button"
               onClick={() => setIsAddingInline(false)}
-              className="px-2 py-1 text-[#8c9e91] hover:text-[#f1f5f2]"
+              className="px-3 py-1.5 text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider cursor-pointer"
             >
               Abbrechen
             </button>
@@ -409,7 +421,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
       )}
 
       {/* Virtualized Table Header */}
-      <div className="bg-[#141a16] border-b border-[#232e26] text-[11px] font-semibold text-[#8c9e91] uppercase tracking-wider grid grid-cols-12 px-6 py-2">
+      <div className="bg-[var(--nothing-subsurface)] border-b border-[var(--nothing-border)] font-mono text-xs uppercase tracking-wider text-[var(--nothing-muted)] font-medium grid grid-cols-12 px-6 py-2.5 select-none shrink-0">
         <span className="col-span-2">Datum</span>
         <span className="col-span-3">Zahlungsempfänger</span>
         <span className="col-span-3">Kategorie</span>
@@ -418,8 +430,8 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
         <span className="col-span-1 text-center">Status</span>
       </div>
 
-      {/* Virtualized Scroll Area (TanStack Virtual) */}
-      <div ref={parentRef} className="flex-1 overflow-y-auto">
+      {/* Virtualized Scroll Area */}
+      <div ref={parentRef} className="flex-1 overflow-y-auto bg-[var(--nothing-surface)]">
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -445,46 +457,47 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className={`grid grid-cols-12 px-6 py-2 text-xs border-b border-[#232e26]/40 items-center transition-colors font-mono tabular-nums cursor-pointer ${
-                  isSelected ? 'bg-[#1b241e] border-l-2 border-l-[#adebb3]' : 'hover:bg-[#141a16]/50'
+                className={`grid grid-cols-12 px-6 py-2 text-xs border-b border-[var(--nothing-border)] items-center transition-colors font-mono tabular-nums cursor-pointer ${
+                  isSelected ? 'bg-[var(--nothing-subsurface)] border-l-2 border-l-[#D71921]' : 'hover:bg-[var(--nothing-subsurface)]/50'
                 }`}
               >
-                <span className="col-span-2 text-[#8c9e91] font-sans">{tx.date}</span>
-                <span className="col-span-3 font-medium text-[#f1f5f2] font-sans truncate flex items-center gap-1.5">
+                <span className="col-span-2 text-[var(--nothing-muted)] font-mono">{tx.date}</span>
+                <span className="col-span-3 font-medium text-[var(--nothing-text)] font-sans truncate flex items-center gap-1.5">
                   {tx.aiSuggested && (
                     <span title="KI-Kategorisiert (Ollama)">
-                      <Sparkles className="w-3 h-3 text-[#adebb3] shrink-0" />
+                      <Sparkles className="w-3 h-3 text-[#D71921] shrink-0" />
                     </span>
                   )}
                   <span className="truncate">{tx.payee}</span>
                 </span>
-                <span className="col-span-3 text-[#8c9e91] font-sans truncate flex items-center gap-1.5">
+                <span className="col-span-3 text-[var(--nothing-muted)] font-sans truncate flex items-center gap-1.5">
                   {(tx.isSplitParent || tx.splitParentId) && (
-                    <span className="text-[9px] bg-[#1b241e] border border-[#adebb3]/40 text-[#adebb3] px-1 py-0.5 rounded font-mono">
+                    <span className="text-[9px] bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] text-[var(--nothing-text)] px-1.5 py-0.5 rounded-full font-mono uppercase">
                       Split
                     </span>
                   )}
                   <span className="truncate">{cat ? cat.name : 'Bereit zur Zuweisung'}</span>
                 </span>
-                <span className="col-span-2 text-right text-[#e8706d]">
+                <span className="col-span-2 text-right text-[#D71921] font-mono">
                   {isNegative ? formatCurrency(Math.abs(tx.amountCents)) : ''}
                 </span>
-                <span className="col-span-1 text-right text-[#adebb3]">
+                <span className="col-span-1 text-right text-[var(--nothing-sage)] font-mono">
                   {!isNegative ? formatCurrency(tx.amountCents) : ''}
                 </span>
                 <div className="col-span-1 flex items-center justify-center gap-1">
                   {tx.clearedStatus === 'reconciled' ? (
-                    <span title="Abgestimmt und gesperrt" className="text-[#8c9e91]">
+                    <span title="Abgestimmt und gesperrt" className="text-[var(--nothing-muted)]">
                       <Lock className="w-3.5 h-3.5" />
                     </span>
                   ) : (
                     <button
+                      type="button"
                       onClick={(e) => handleToggleCleared(tx, e)}
                       title="Status umschalten (C)"
-                      className={`w-4 h-4 rounded-full text-[10px] leading-4 text-center font-bold transition-colors ${
+                      className={`w-5 h-5 rounded-full text-[10px] leading-5 text-center font-mono font-bold transition-colors cursor-pointer ${
                         tx.clearedStatus === 'cleared'
-                          ? 'bg-[#adebb3]/20 text-[#adebb3] border border-[#adebb3]/40'
-                          : 'border border-[#232e26] text-[#8c9e91] hover:border-[#adebb3]'
+                          ? 'bg-[var(--nothing-sage)]/15 text-[var(--nothing-sage)] border border-[var(--nothing-sage)]/30'
+                          : 'border border-[var(--nothing-border)] text-[var(--nothing-muted)] hover:border-[var(--nothing-border-hover)] hover:text-[var(--nothing-text)]'
                       }`}
                     >
                       C
@@ -492,9 +505,10 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
                   )}
                   {isSelected && (
                     <button
+                      type="button"
                       onClick={(e) => handleDeleteSelected(tx.id, e)}
                       title="Löschen (Delete)"
-                      className="text-[#e8706d] opacity-60 hover:opacity-100 ml-1"
+                      className="text-[#D71921] opacity-70 hover:opacity-100 ml-1 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

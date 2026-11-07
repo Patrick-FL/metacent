@@ -28,20 +28,27 @@ export const AddGroupModal: React.FC<AddGroupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="bg-[#141a16] border border-[#232e26] rounded-xl max-w-sm w-full p-5 text-[#f1f5f2] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#232e26] pb-3 mb-4">
-          <h3 className="font-semibold text-sm text-[#f1f5f2]">
-            Neue Kategoriegruppe erstellen
-          </h3>
-          <button onClick={onClose} className="text-[#8c9e91] hover:text-[#f1f5f2]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-3xl max-w-sm w-full p-6 text-[var(--nothing-text)]">
+        <div className="flex items-center justify-between border-b border-[var(--nothing-border)] pb-3 mb-4">
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--nothing-muted)]">CATEGORY // GROUP</p>
+            <h3 className="font-bold text-base text-[var(--nothing-text)]">
+              Kategoriegruppe erstellen
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center justify-center cursor-pointer transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#8c9e91] mb-1.5">
+            <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1.5">
               Gruppenbezeichnung
             </label>
             <input
@@ -51,24 +58,24 @@ export const AddGroupModal: React.FC<AddGroupModalProps> = ({
               placeholder="z.B. Abonnements & Verträge"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              className="w-full bg-[#0d110e] border border-[#232e26] focus:border-[#adebb3] rounded-md px-3 py-2 text-sm text-[#f1f5f2] focus:outline-none"
+              className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] focus:outline-none"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#232e26]">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nothing-border)]">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 text-xs text-[#8c9e91] hover:text-[#f1f5f2]"
+              className="px-4 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
             >
               Abbrechen
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#adebb3] text-[#0d110e] font-semibold text-xs rounded hover:bg-[#adebb3]/90 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D71921] text-white font-mono text-xs uppercase tracking-wider font-semibold rounded-full hover:opacity-90 transition-opacity cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Gruppe anlegen</span>
+              <span>Anlegen</span>
             </button>
           </div>
         </form>
@@ -76,4 +83,3 @@ export const AddGroupModal: React.FC<AddGroupModalProps> = ({
     </div>
   );
 };
-

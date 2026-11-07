@@ -166,7 +166,7 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
 
   const formatMonthTitle = (monthStr: string) => {
     const [year, month] = monthStr.split('-');
-    const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+    const monthNames = ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'];
     return `${monthNames[parseInt(month, 10) - 1]} ${year}`;
   };
 
@@ -238,99 +238,116 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
   const isOverAssigned = calc.readyToAssignCents < 0;
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0d110e] text-[#f1f5f2]">
-      {/* Top Bar: Month Selector & Actions */}
-      <header className="px-6 py-4 border-b border-[#232e26] flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 bg-[#141a16] border border-[#232e26] rounded-md px-2 py-1">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--nothing-bg)] text-[var(--nothing-text)] transition-colors">
+      {/* Top Bar: Month Selector & Primary Telemetry */}
+      <header className="px-6 py-3 bg-[var(--nothing-surface)] border-b border-[var(--nothing-border)] flex items-center justify-between shrink-0 gap-4">
+        <div className="flex items-center gap-3">
+          {/* Month Switcher Capsule */}
+          <div className="flex items-center gap-1 bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-full px-1.5 py-1">
             <button
+              type="button"
               onClick={() => handleShiftMonth(-1)}
-              className="p-1 text-[#8c9e91] hover:text-[#f1f5f2] transition-colors"
+              className="w-7 h-7 rounded-full aspect-square flex items-center justify-center text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] transition-colors cursor-pointer"
+              title="Vorheriger Monat"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="font-semibold text-sm px-2 text-[#f1f5f2]">
+            <span className="font-mono font-semibold text-xs px-2 uppercase tracking-wider text-[var(--nothing-text)]">
               {formatMonthTitle(selectedMonth)}
             </span>
             <button
+              type="button"
               onClick={() => handleShiftMonth(1)}
-              className="p-1 text-[#8c9e91] hover:text-[#f1f5f2] transition-colors"
+              className="w-7 h-7 rounded-full aspect-square flex items-center justify-center text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] transition-colors cursor-pointer"
+              title="Nächster Monat"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="flex items-center gap-1">
+          {/* Undo / Redo Circular Action Buttons */}
+          <div className="flex items-center gap-1.5">
             <button
+              type="button"
               disabled={!storage.canUndo()}
               onClick={handleUndo}
-              className={`p-1.5 rounded transition-colors ${
+              className={`w-8 h-8 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] flex items-center justify-center transition-colors cursor-pointer ${
                 storage.canUndo()
-                  ? 'hover:bg-[#141a16] text-[#8c9e91] hover:text-[#f1f5f2]'
-                  : 'text-[#4c5950] cursor-not-allowed'
+                  ? 'hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)]'
+                  : 'text-[var(--nothing-muted)] opacity-40 cursor-not-allowed'
               }`}
               title="Rückgängig (Ctrl+Z)"
             >
-              <Undo2 className="w-4 h-4" />
+              <Undo2 className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               disabled={!storage.canRedo()}
               onClick={handleRedo}
-              className={`p-1.5 rounded transition-colors ${
+              className={`w-8 h-8 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] flex items-center justify-center transition-colors cursor-pointer ${
                 storage.canRedo()
-                  ? 'hover:bg-[#141a16] text-[#8c9e91] hover:text-[#f1f5f2]'
-                  : 'text-[#4c5950] cursor-not-allowed'
+                  ? 'hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)]'
+                  : 'text-[var(--nothing-muted)] opacity-40 cursor-not-allowed'
               }`}
               title="Wiederholen (Ctrl+Shift+Z)"
             >
-              <Redo2 className="w-4 h-4" />
+              <Redo2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Ready to Assign Banner */}
+        {/* Ready to Assign Bento Widget */}
         <div
-          className={`flex items-center gap-3 px-4 py-2 rounded-lg border transition-all ${
+          className={`flex items-center gap-3 px-4 py-1.5 rounded-full border transition-all ${
             isOverAssigned
-              ? 'bg-[#e8706d]/10 border-[#e8706d] text-[#e8706d]'
-              : 'bg-[#adebb3]/10 border-[#adebb3] text-[#adebb3]'
+              ? 'bg-[#D71921]/10 border-[#D71921] text-[#D71921]'
+              : 'bg-[var(--nothing-subsurface)] border-[var(--nothing-border)] text-[var(--nothing-text)]'
           }`}
         >
-          <div>
-            <div className="text-xl font-bold font-mono tracking-tight tabular-nums">
+          <div
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              isOverAssigned ? 'bg-[#D71921] animate-pulse' : 'bg-[var(--nothing-sage)]'
+            }`}
+          />
+          <div className="text-left">
+            <div className="font-mono text-base font-bold tracking-tight tabular-nums leading-none">
               {formatCurrency(calc.readyToAssignCents)}
             </div>
-            <div className="text-[10px] tracking-wide uppercase font-semibold">
-              {isOverAssigned ? 'Mehr zugewiesen als verfügbar' : 'Bereit zur Zuweisung'}
+            <div className="font-mono text-[9px] tracking-widest uppercase text-[var(--nothing-muted)] font-medium mt-0.5">
+              {isOverAssigned ? 'ÜBERBUCHT (DEFIZIT)' : 'BEREIT ZUR ZUWEISUNG'}
             </div>
           </div>
           {isOverAssigned && (
             <button
+              type="button"
               onClick={handleFixOverAssigned}
-              className="flex items-center gap-1 text-xs bg-[#e8706d] text-[#0d110e] px-2.5 py-1 rounded font-bold hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1 font-mono text-[10px] uppercase font-semibold bg-[#D71921] text-white px-2.5 py-1 rounded-full hover:opacity-90 transition-opacity ml-1 cursor-pointer"
             >
-              <Wand2 className="w-3.5 h-3.5" />
-              <span>Korrigieren</span>
+              <Wand2 className="w-3 h-3" />
+              <span>Fix</span>
             </button>
           )}
         </div>
 
+        {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setIsCopyPreviousMonthOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#232e26] hover:border-[#adebb3]/40 hover:text-[#adebb3] rounded-md text-[#8c9e91] transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
             title={`Zuweisungen aus ${formatMonthTitle(previousMonth)} übernehmen`}
           >
             <Copy className="w-3.5 h-3.5" />
-            <span>Vormonat übernehmen</span>
+            <span>Vormonat</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setIsAddGroupOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#232e26] hover:border-[#adebb3]/40 rounded-md text-[#8c9e91] hover:text-[#f1f5f2] transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Kategoriegruppe</span>
+            <span>Gruppe</span>
           </button>
         </div>
       </header>
@@ -338,9 +355,9 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
       {/* Main Budget Grid + Right Inspector */}
       <div className="flex-1 flex overflow-hidden">
         {/* Table Area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-[var(--nothing-surface)]">
           <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-[#0d110e] border-b border-[#232e26] text-[11px] font-semibold text-[#8c9e91] uppercase tracking-wider z-10">
+            <thead className="sticky top-0 bg-[var(--nothing-subsurface)] border-b border-[var(--nothing-border)] font-mono text-xs uppercase tracking-wider text-[var(--nothing-muted)] z-10 font-medium">
               <tr>
                 <th className="py-2.5 px-6">Kategorie</th>
                 <th className="py-2.5 px-4 text-right w-36">Zugewiesen</th>
@@ -358,31 +375,32 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                 return (
                   <React.Fragment key={group.id}>
                     {/* Group Header Row */}
-                    <tr className="bg-[#141a16]/60 border-t border-b border-[#232e26] text-xs font-semibold text-[#f1f5f2]">
+                    <tr className="bg-[var(--nothing-subsurface)]/70 border-t border-b border-[var(--nothing-border)] text-xs font-mono uppercase tracking-wider font-semibold text-[var(--nothing-text)]">
                       <td className="py-2 px-6 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <ChevronDown className="w-3.5 h-3.5 text-[#8c9e91]" />
+                          <ChevronDown className="w-3.5 h-3.5 text-[var(--nothing-muted)]" />
                           <span>{group.name}</span>
                         </div>
                         <button
+                          type="button"
                           onClick={() => setAddCatGroupId(group.id)}
-                          className="opacity-60 hover:opacity-100 text-[#adebb3] text-[11px] flex items-center gap-1 font-normal"
+                          className="font-mono text-[10px] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center gap-1 font-semibold transition-colors cursor-pointer"
                         >
                           <Plus className="w-3 h-3" /> Kategorie
                         </button>
                       </td>
-                      <td className="py-2 px-4 text-right font-mono tabular-nums text-[#8c9e91]">
+                      <td className="py-2 px-4 text-right font-mono tabular-nums text-[var(--nothing-muted)]">
                         {formatCurrency(groupAssigned)}
                       </td>
-                      <td className="py-2 px-4 text-right font-mono tabular-nums text-[#8c9e91]">
+                      <td className="py-2 px-4 text-right font-mono tabular-nums text-[var(--nothing-muted)]">
                         {formatCurrency(groupActivity)}
                       </td>
-                      <td className="py-2 px-6 text-right font-mono tabular-nums text-[#f1f5f2]">
+                      <td className="py-2 px-6 text-right font-mono tabular-nums text-[var(--nothing-text)] font-bold">
                         {formatCurrency(groupAvailable)}
                       </td>
                     </tr>
 
-                    {/* Category Rows (Clean Typography, No Emojis) */}
+                    {/* Category Rows */}
                     {groupCategories.map((category) => {
                       const rollup = storage.getMonthlyRollup(selectedMonth, category.id);
                       const available = calc.categoryAvailableMap[category.id] ?? 0;
@@ -406,14 +424,14 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                               if (category.target.dueDate) setTargetDueDate(category.target.dueDate);
                             }
                           }}
-                          className={`text-xs border-b border-[#232e26]/50 cursor-pointer transition-colors ${
+                          className={`text-xs border-b border-[var(--nothing-border)] cursor-pointer transition-colors ${
                             isSelected
-                              ? 'bg-[#1b241e] border-l-2 border-l-[#adebb3]'
-                              : 'hover:bg-[#141a16]/40'
+                              ? 'bg-[var(--nothing-subsurface)] border-l-2 border-l-[#D71921]'
+                              : 'hover:bg-[var(--nothing-subsurface)]/40'
                           }`}
                         >
                           <td
-                            className="py-2.5 px-6 font-medium text-[#f1f5f2]"
+                            className="py-2.5 px-6 font-medium text-[var(--nothing-text)]"
                             onDoubleClick={(e) => {
                               e.stopPropagation();
                               setSelectedCategoryId(category.id);
@@ -426,11 +444,11 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                               <span>{category.name}</span>
                               {target && targetEval && !isTargetFunded && (
                                 <span
-                                  className="text-[10px] text-[#f3d279] flex items-center gap-1 font-normal"
+                                  className="text-[10px] font-mono text-[var(--nothing-amber)] flex items-center gap-1 font-normal"
                                   title={targetEval.statusDescription}
                                 >
                                   <Clock className="w-3 h-3" />
-                                  <span>{formatCurrency(targetNeeded)} noch nötig</span>
+                                  <span>{formatCurrency(targetNeeded)} nötig</span>
                                 </span>
                               )}
                             </div>
@@ -452,31 +470,31 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                                 onChange={(e) => setEditInputVal(e.target.value)}
                                 onBlur={() => handleSaveEdit(category.id)}
                                 onKeyDown={(e) => handleKeyDown(e, category.id)}
-                                className="w-28 text-right bg-[#0d110e] border border-[#adebb3] text-[#adebb3] px-2 py-1 rounded font-mono text-xs focus:outline-none"
+                                className="w-28 text-right bg-[var(--nothing-surface)] border border-[#D71921] text-[var(--nothing-text)] px-2.5 py-1 rounded-lg font-mono text-xs focus:outline-none"
                               />
                             ) : (
-                              <span className="font-mono tabular-nums px-2 py-1 rounded hover:bg-[#232e26]/50 text-[#f1f5f2]">
+                              <span className="font-mono tabular-nums px-2 py-1 rounded hover:bg-[var(--nothing-subsurface)] text-[var(--nothing-text)]">
                                 {formatCurrency(rollup.assignedCents)}
                               </span>
                             )}
                           </td>
 
                           {/* Activity Column */}
-                          <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[#8c9e91]">
+                          <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[var(--nothing-muted)]">
                             {formatCurrency(rollup.activityCents)}
                           </td>
 
-                          {/* Available Column with Target indicators */}
+                          {/* Available Column with Nothing OS Capsule Badges */}
                           <td className="py-2.5 px-6 text-right">
                             <span
-                              className={`inline-block px-2.5 py-0.5 rounded-full font-mono font-medium tabular-nums text-[11px] ${
+                              className={`inline-block px-3 py-0.5 rounded-full font-mono tabular-nums text-xs ${
                                 available < 0
-                                  ? 'bg-[#e8706d]/15 text-[#e8706d] border border-[#e8706d]/30'
+                                  ? 'bg-[#D71921]/15 text-[#D71921] border border-[#D71921]/30 font-bold'
                                   : isTargetFunded
-                                  ? 'bg-[#adebb3] text-[#0d110e] font-bold'
+                                  ? 'bg-[var(--nothing-sage)]/15 text-[var(--nothing-sage)] border border-[var(--nothing-sage)]/30 font-bold'
                                   : available > 0
-                                  ? 'bg-[#adebb3]/15 text-[#adebb3] border border-[#adebb3]/30'
-                                  : 'text-[#8c9e91]'
+                                  ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-medium'
+                                  : 'text-[var(--nothing-muted)]'
                               }`}
                             >
                               {formatCurrency(available)}
@@ -493,23 +511,23 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
         </div>
 
         {/* Right Inspector Panel: Category Details & Target Setting */}
-        <aside className="w-80 border-l border-[#232e26] bg-[#0a0d0b] p-5 flex flex-col gap-4 overflow-y-auto">
+        <aside className="w-84 border-l border-[var(--nothing-border)] bg-[var(--nothing-surface)] p-5 flex flex-col gap-4 overflow-y-auto shrink-0 transition-colors">
           {selectedCategory ? (
             <div className="space-y-4">
-              <div className="border-b border-[#232e26] pb-3 mb-2">
+              <div className="border-b border-[var(--nothing-border)] pb-3 mb-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-[#8c9e91] uppercase tracking-wider">
-                    Kategorie-Details
+                  <span className="font-mono text-[10px] font-semibold text-[var(--nothing-muted)] uppercase tracking-widest">
+                    KATEGORIE // DETAILS
                   </span>
                   {!isEditingCategoryName && (
                     <button
                       type="button"
                       onClick={handleStartRenameCategory}
-                      className="text-[11px] text-[#8c9e91] hover:text-[#adebb3] flex items-center gap-1 font-medium transition-colors p-1 -mr-1 rounded hover:bg-[#141a16]"
+                      className="font-mono text-[11px] uppercase tracking-wider text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center gap-1 font-medium transition-colors p-1 rounded hover:bg-[var(--nothing-subsurface)] cursor-pointer"
                       title="Kategorie umbenennen"
                     >
                       <Pencil className="w-3 h-3" />
-                      <span>Umbenennen</span>
+                      <span>Edit</span>
                     </button>
                   )}
                 </div>
@@ -525,14 +543,14 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                         if (e.key === 'Enter') handleSaveCategoryName();
                         if (e.key === 'Escape') handleCancelRenameCategory();
                       }}
-                      className="w-full bg-[#0d110e] border border-[#adebb3] rounded-md px-2.5 py-1.5 text-sm font-semibold text-[#f1f5f2] focus:outline-none"
+                      className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-xl px-3 py-1.5 text-sm font-semibold text-[var(--nothing-text)] focus:outline-none focus:border-[var(--nothing-text)]"
                       placeholder="Kategoriename eingeben"
                     />
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={handleSaveCategoryName}
-                        className="flex-1 py-1.5 bg-[#adebb3] text-[#0d110e] rounded text-xs font-bold hover:bg-[#adebb3]/90 transition-colors flex items-center justify-center gap-1.5"
+                        className="flex-1 py-1.5 bg-[#D71921] text-white rounded-full font-mono text-xs uppercase tracking-wider font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Check className="w-3.5 h-3.5" />
                         <span>Speichern</span>
@@ -540,7 +558,7 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                       <button
                         type="button"
                         onClick={handleCancelRenameCategory}
-                        className="px-3 py-1.5 bg-[#141a16] border border-[#232e26] text-[#8c9e91] hover:text-[#f1f5f2] rounded text-xs font-medium transition-colors flex items-center justify-center gap-1"
+                        className="px-3 py-1.5 bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] text-[var(--nothing-text)] hover:border-[var(--nothing-border-hover)] rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <X className="w-3.5 h-3.5" />
                         <span>Abbrechen</span>
@@ -551,7 +569,7 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                   <div className="mt-1 flex items-center justify-between group">
                     <h3
                       onClick={handleStartRenameCategory}
-                      className="text-base font-semibold text-[#f1f5f2] cursor-pointer hover:text-[#adebb3] transition-colors truncate"
+                      className="text-base font-bold text-[var(--nothing-text)] cursor-pointer hover:underline transition-colors truncate"
                       title="Klicken zum Umbenennen"
                     >
                       {selectedCategory.name}
@@ -560,22 +578,22 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                 )}
 
                 {/* Linked Accounts Info Badge */}
-                <div className="mt-2.5 flex items-center gap-2 text-[11px] text-[#8c9e91]">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#141a16] border border-[#232e26] font-mono text-[10px] text-[#adebb3]">
+                <div className="mt-2.5 flex items-center gap-2 text-[11px] text-[var(--nothing-muted)]">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] font-mono text-[10px] text-[var(--nothing-text)] font-semibold">
                     {categoryTransactions.length} {categoryTransactions.length === 1 ? 'Buchung' : 'Buchungen'}
                   </span>
-                  <span>auf Konten verknüpft</span>
+                  <span className="font-mono text-[10px] uppercase tracking-wider">auf Konten verknüpft</span>
                 </div>
 
                 {/* Previous Month Quick Copy for Single Category */}
                 {previousMonthRollup && previousMonthRollup.assignedCents > 0 && (
-                  <div className="mt-3 bg-[#141a16] border border-[#232e26] rounded-xl p-3 flex items-center justify-between text-xs">
+                  <div className="mt-3 bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-3 flex items-center justify-between text-xs">
                     <div>
-                      <div className="text-[10px] text-[#8c9e91] uppercase tracking-wider">
+                      <div className="font-mono text-[9px] text-[var(--nothing-muted)] uppercase tracking-wider">
                         Vormonat ({formatMonthTitle(previousMonth)})
                       </div>
-                      <div className="font-mono font-medium text-[#f1f5f2] mt-0.5">
-                        {formatCurrency(previousMonthRollup.assignedCents)} zugewiesen
+                      <div className="font-mono font-bold text-[var(--nothing-text)] mt-0.5 tabular-nums">
+                        {formatCurrency(previousMonthRollup.assignedCents)}
                       </div>
                     </div>
                     <button
@@ -587,27 +605,28 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                           `${formatCurrency(previousMonthRollup.assignedCents)} aus ${formatMonthTitle(previousMonth)} für „${selectedCategory.name}“ übernommen`
                         );
                       }}
-                      className="flex items-center gap-1.5 px-2.5 py-1 bg-[#232e26] hover:bg-[#adebb3] text-[#8c9e91] hover:text-[#0d110e] hover:font-bold rounded text-xs transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-surface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
                       title={`${formatCurrency(previousMonthRollup.assignedCents)} in ${formatMonthTitle(selectedMonth)} übertragen`}
                     >
                       <Copy className="w-3 h-3" />
-                      <span>Übernehmen</span>
+                      <span>Kopieren</span>
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Target Configuration Card */}
-              <div className="bg-[#141a16] border border-[#232e26] rounded-xl p-4 space-y-3">
+              {/* Target Configuration Bento Card */}
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-medium text-xs text-[#f1f5f2]">
-                    <TargetIcon className="w-4 h-4 text-[#adebb3]" />
+                  <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider font-semibold text-[var(--nothing-text)]">
+                    <TargetIcon className="w-4 h-4 text-[#D71921]" />
                     <span>Sparziel konfigurieren</span>
                   </div>
                   {selectedCategory.target && (
                     <button
+                      type="button"
                       onClick={handleDeleteTarget}
-                      className="text-[#e8706d] hover:text-[#e8706d]/80 p-1"
+                      className="text-[#D71921] hover:opacity-80 p-1 cursor-pointer"
                       title="Ziel löschen"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -616,30 +635,30 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                 </div>
 
                 {selectedCategory.target && selectedCategoryTargetEval && (
-                  <div className="bg-[#0d110e] border border-[#232e26] rounded-lg p-3 space-y-2">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-[#8c9e91]">Status</span>
+                  <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)]">Status</span>
                       <span
-                        className={`font-medium ${
+                        className={`font-mono text-xs font-semibold ${
                           selectedCategoryTargetEval.isFunded
-                            ? 'text-[#adebb3]'
+                            ? 'text-[var(--nothing-sage)]'
                             : selectedCategoryTargetEval.isOverdue
-                            ? 'text-[#e8706d]'
-                            : 'text-[#f3d279]'
+                            ? 'text-[#D71921]'
+                            : 'text-[var(--nothing-amber)]'
                         }`}
                       >
                         {selectedCategoryTargetEval.statusDescription}
                       </span>
                     </div>
 
-                    <div className="w-full bg-[#141a16] h-1.5 rounded-full overflow-hidden border border-[#232e26]">
+                    <div className="w-full bg-[var(--nothing-subsurface)] h-2 rounded-full overflow-hidden border border-[var(--nothing-border)]">
                       <div
                         className={`h-full transition-all duration-300 ${
                           selectedCategoryTargetEval.isFunded
-                            ? 'bg-[#adebb3]'
+                            ? 'bg-[var(--nothing-sage)]'
                             : selectedCategoryTargetEval.isOverdue
-                            ? 'bg-[#e8706d]'
-                            : 'bg-[#f3d279]'
+                            ? 'bg-[#D71921]'
+                            : 'bg-[var(--nothing-amber)]'
                         }`}
                         style={{
                           width: `${Math.min(100, Math.round(selectedCategoryTargetEval.progressRatio * 100))}%`,
@@ -647,21 +666,21 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-[#8c9e91] font-mono">
+                    <div className="flex items-center justify-between text-[10px] text-[var(--nothing-muted)] font-mono tabular-nums">
                       <span>
                         Soll {formatMonthTitle(selectedMonth)}: {formatCurrency(selectedCategoryTargetEval.monthlyQuotaCents)}
                       </span>
-                      <span>{Math.round(selectedCategoryTargetEval.progressRatio * 100)} %</span>
+                      <span className="font-bold">{Math.round(selectedCategoryTargetEval.progressRatio * 100)} %</span>
                     </div>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-[11px] text-[#8c9e91] mb-1">Rhythmus</label>
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">Rhythmus</label>
                   <select
                     value={targetType}
                     onChange={(e) => setTargetType(e.target.value as TargetType)}
-                    className="w-full bg-[#0d110e] border border-[#232e26] rounded px-2.5 py-1 text-xs text-[#f1f5f2]"
+                    className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-3 py-1.5 text-xs text-[var(--nothing-text)] focus:outline-none focus:border-[var(--nothing-text)]"
                   >
                     <option value="monthly">Monatlich</option>
                     <option value="weekly">Wöchentlich</option>
@@ -671,68 +690,68 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-[#8c9e91] mb-1">Zielbetrag (EUR)</label>
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">Zielbetrag (EUR)</label>
                   <input
                     type="text"
                     value={targetAmountStr}
                     onChange={(e) => setTargetAmountStr(e.target.value)}
-                    className="w-full bg-[#0d110e] border border-[#232e26] rounded px-2.5 py-1 text-xs text-[#adebb3] font-mono"
+                    className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-3 py-1.5 text-xs text-[var(--nothing-text)] font-mono tabular-nums focus:outline-none focus:border-[var(--nothing-text)]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-[#8c9e91] mb-1">Fälligkeitsdatum (optional)</label>
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">Fälligkeitsdatum (optional)</label>
                   <input
                     type="date"
                     value={targetDueDate}
                     onChange={(e) => setTargetDueDate(e.target.value)}
-                    className="w-full bg-[#0d110e] border border-[#232e26] rounded px-2.5 py-1 text-xs text-[#f1f5f2]"
+                    className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-3 py-1.5 text-xs text-[var(--nothing-text)] font-mono focus:outline-none focus:border-[var(--nothing-text)]"
                   />
                 </div>
 
                 <button
                   type="button"
                   onClick={handleSaveTarget}
-                  className="w-full py-2 bg-[#adebb3] text-[#0d110e] rounded text-xs font-bold hover:bg-[#adebb3]/90 transition-colors flex items-center justify-center gap-1.5 mt-2"
+                  className="w-full py-2 bg-[#D71921] text-white rounded-full font-mono text-xs uppercase tracking-wider font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 mt-2 cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Ziel speichern</span>
                 </button>
               </div>
 
-              {/* Linked Account Transactions Card */}
-              <div className="bg-[#141a16] border border-[#232e26] rounded-xl p-3.5 space-y-2.5">
+              {/* Linked Account Transactions Bento Card */}
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-medium text-xs text-[#f1f5f2]">
-                    <Layers className="w-3.5 h-3.5 text-[#adebb3]" />
-                    <span>Zugeordnete Kontobuchungen</span>
+                  <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider font-semibold text-[var(--nothing-text)]">
+                    <Layers className="w-3.5 h-3.5 text-[#D71921]" />
+                    <span>Zugeordnete Buchungen</span>
                   </div>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#0d110e] border border-[#232e26] text-[#8c9e91]">
+                  <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] text-[var(--nothing-muted)]">
                     {categoryTransactions.length > 5
-                      ? `5 von ${categoryTransactions.length}`
+                      ? `5 / ${categoryTransactions.length}`
                       : categoryTransactions.length}
                   </span>
                 </div>
 
                 {recentCategoryTransactions.length > 0 ? (
-                  <div className="space-y-1.5 max-h-44 overflow-y-auto pr-0.5">
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
                     {recentCategoryTransactions.map((tx) => {
                       const acc = accounts.find((a) => a.id === tx.accountId);
                       const isNegative = tx.amountCents < 0;
                       return (
                         <div
                           key={tx.id}
-                          className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-[#0d110e]/70 border border-[#232e26]/60"
+                          className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-[var(--nothing-surface)] border border-[var(--nothing-border)]"
                         >
                           <div className="min-w-0 pr-2">
-                            <div className="font-medium text-[#f1f5f2] truncate">{tx.payee}</div>
-                            <div className="text-[9px] text-[#8c9e91] truncate font-sans">
+                            <div className="font-medium text-[var(--nothing-text)] truncate">{tx.payee}</div>
+                            <div className="font-mono text-[10px] text-[var(--nothing-muted)] truncate">
                               {acc ? acc.nickname : 'Konto'} • {tx.date}
                             </div>
                           </div>
                           <span
-                            className={`font-mono font-medium text-xs shrink-0 tabular-nums ${
-                              isNegative ? 'text-[#e8706d]' : 'text-[#adebb3]'
+                            className={`font-mono font-semibold text-xs shrink-0 tabular-nums ${
+                              isNegative ? 'text-[#D71921]' : 'text-[var(--nothing-sage)]'
                             }`}
                           >
                             {formatCurrency(tx.amountCents)}
@@ -742,20 +761,20 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                     })}
                   </div>
                 ) : (
-                  <p className="text-[11px] text-[#8c9e91] italic py-1">
-                    Aktuell keine Buchungen auf Konten dieser Kategorie zugeordnet.
+                  <p className="font-mono text-xs text-[var(--nothing-muted)] py-2 text-center">
+                    Keine Buchungen vorhanden.
                   </p>
                 )}
                 {categoryTransactions.length > 5 && (
-                  <div className="text-[10px] text-[#8c9e91] text-right font-mono">
+                  <div className="font-mono text-[10px] text-[var(--nothing-muted)] text-right">
                     + {categoryTransactions.length - 5} ältere Buchungen
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="text-center py-10 text-xs text-[#8c9e91]">
-              Wähle eine Kategorie aus, um Details und Sparziele zu verwalten.
+            <div className="text-center py-12 font-mono text-xs text-[var(--nothing-muted)] uppercase tracking-wider">
+              Kategorie auswählen für Details.
             </div>
           )}
         </aside>
@@ -788,14 +807,15 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
         }}
       />
 
-      {/* Floating Action Toast */}
+      {/* Floating Action Toast (Bento Capsule) */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#141a16] border border-[#adebb3] text-[#adebb3] px-4 py-2.5 rounded-lg text-xs font-medium shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <Check className="w-4 h-4 text-[#adebb3]" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--nothing-surface)] border border-[var(--nothing-border)] text-[var(--nothing-text)] px-4 py-2 rounded-full font-mono text-xs uppercase tracking-wider flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <Check className="w-4 h-4 text-[var(--nothing-sage)]" />
           <span>{toastMessage}</span>
           <button
+            type="button"
             onClick={() => setToastMessage(null)}
-            className="text-[#8c9e91] hover:text-[#f1f5f2] ml-2 p-0.5"
+            className="text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] ml-2 p-0.5 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>

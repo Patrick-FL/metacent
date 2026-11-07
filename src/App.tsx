@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { TitleBar } from './components/layout/TitleBar';
 import { Sidebar } from './components/layout/Sidebar';
 import { PlanView } from './components/plan/PlanView';
 import { RegisterView } from './components/register/RegisterView';
@@ -69,42 +70,48 @@ export function App() {
   }, []);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0d110e] text-[#f1f5f2]">
-      {/* Left Sidebar */}
-      <Sidebar
-        currentView={currentView}
-        selectedAccountId={selectedAccountId}
-        accounts={accounts}
-        onSelectView={(view) => {
-          setCurrentView(view);
-          setSelectedAccountId(null);
-        }}
-        onSelectAccount={(accId) => {
-          setSelectedAccountId(accId);
-          setCurrentView('accounts');
-        }}
-        onOpenAddAccount={() => setIsAddAccountOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[var(--nothing-bg)] text-[var(--nothing-text)] transition-colors">
+      {/* Frameless Desktop Window Title Bar */}
+      <TitleBar onOpenShortcuts={() => setIsShortcutsHelpOpen(true)} />
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        {currentView === 'plan' && !selectedAccountId && (
-          <PlanView onUpdate={triggerRefresh} />
-        )}
+      {/* Main Workspace Frame */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar */}
+        <Sidebar
+          currentView={currentView}
+          selectedAccountId={selectedAccountId}
+          accounts={accounts}
+          onSelectView={(view) => {
+            setCurrentView(view);
+            setSelectedAccountId(null);
+          }}
+          onSelectAccount={(accId) => {
+            setSelectedAccountId(accId);
+            setCurrentView('accounts');
+          }}
+          onOpenAddAccount={() => setIsAddAccountOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+        />
 
-        {(currentView === 'accounts' || selectedAccountId) && selectedAccount && (
-          <RegisterView
-            account={selectedAccount}
-            onUpdate={triggerRefresh}
-            onOpenFileImport={() => setIsFileImportOpen(true)}
-            onOpenReconcile={() => setIsReconcileOpen(true)}
-            onOpenEditAccount={() => setIsEditAccountOpen(true)}
-          />
-        )}
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--nothing-bg)]">
+          {currentView === 'plan' && !selectedAccountId && (
+            <PlanView onUpdate={triggerRefresh} />
+          )}
 
-        {currentView === 'reflect' && <ReflectView />}
-      </main>
+          {(currentView === 'accounts' || selectedAccountId) && selectedAccount && (
+            <RegisterView
+              account={selectedAccount}
+              onUpdate={triggerRefresh}
+              onOpenFileImport={() => setIsFileImportOpen(true)}
+              onOpenReconcile={() => setIsReconcileOpen(true)}
+              onOpenEditAccount={() => setIsEditAccountOpen(true)}
+            />
+          )}
+
+          {currentView === 'reflect' && <ReflectView />}
+        </main>
+      </div>
 
       {/* Modals */}
       <AddAccountModal

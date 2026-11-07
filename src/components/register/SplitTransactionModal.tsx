@@ -114,44 +114,51 @@ export const SplitTransactionModal: React.FC<SplitTransactionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="bg-[#141a16] border border-[#232e26] rounded-xl max-w-xl w-full p-6 text-[#f1f5f2] shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-3xl max-w-xl w-full p-6 text-[var(--nothing-text)] flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#232e26] pb-3 mb-4">
+        <div className="flex items-center justify-between border-b border-[var(--nothing-border)] pb-3 mb-4">
           <div className="flex items-center gap-2">
-            <Split className="w-5 h-5 text-[#adebb3]" />
-            <h3 className="text-base font-bold">Split-Buchung aufteilen</h3>
+            <Split className="w-5 h-5 text-[#D71921]" />
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-widest text-[var(--nothing-muted)]">TRANSACTION // SPLIT</p>
+              <h3 className="font-bold text-base text-[var(--nothing-text)]">Buchung aufteilen</h3>
+            </div>
           </div>
-          <button onClick={onClose} className="text-[#8c9e91] hover:text-[#f1f5f2] transition-colors">
-            <X className="w-5 h-5" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full aspect-square border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center justify-center cursor-pointer transition-colors"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Transaction Summary Card */}
-        <div className="bg-[#0d110e] border border-[#232e26] p-3 rounded-lg flex items-center justify-between mb-4 text-xs font-mono tabular-nums">
+        <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-3.5 rounded-2xl flex items-center justify-between mb-4 text-xs font-mono tabular-nums">
           <div>
-            <div className="font-sans font-medium text-[#f1f5f2]">{transaction.payee}</div>
-            <div className="text-[11px] text-[#8c9e91] font-sans">{transaction.date}</div>
+            <div className="font-sans font-bold text-[var(--nothing-text)]">{transaction.payee}</div>
+            <div className="font-mono text-[10px] text-[var(--nothing-muted)]">{transaction.date}</div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] uppercase font-sans text-[#8c9e91]">Gesamtbetrag</div>
-            <div className={`text-sm font-bold ${isNegative ? 'text-[#e8706d]' : 'text-[#adebb3]'}`}>
+            <div className="font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">Gesamtbetrag</div>
+            <div className={`text-base font-bold font-mono ${isNegative ? 'text-[#D71921]' : 'text-[var(--nothing-sage)]'}`}>
               {formatCurrency(transaction.amountCents)}
             </div>
           </div>
         </div>
 
         {/* Split Lines */}
-        <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+        <div className="space-y-3 overflow-y-auto pr-1 flex-1">
           {lines.map((line, idx) => (
-            <div key={line.id} className="flex items-center gap-2 bg-[#0d110e] p-2.5 rounded border border-[#232e26]">
+            <div key={line.id} className="flex items-center gap-2 bg-[var(--nothing-subsurface)] p-3 rounded-2xl border border-[var(--nothing-border)]">
               {/* Category selector */}
               <div className="flex-1">
-                <label className="block text-[10px] text-[#8c9e91] mb-1">Kategorie</label>
+                <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">Kategorie</label>
                 <select
                   value={line.categoryId}
                   onChange={(e) => handleLineChange(idx, 'categoryId', e.target.value)}
-                  className="w-full bg-[#141a16] border border-[#232e26] rounded px-2 py-1 text-xs text-[#f1f5f2] focus:outline-none focus:border-[#adebb3]"
+                  className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 text-xs text-[var(--nothing-text)] focus:outline-none focus:border-[var(--nothing-text)]"
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -163,36 +170,37 @@ export const SplitTransactionModal: React.FC<SplitTransactionModalProps> = ({
 
               {/* Memo input */}
               <div className="flex-1">
-                <label className="block text-[10px] text-[#8c9e91] mb-1">Notiz</label>
+                <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">Notiz</label>
                 <input
                   type="text"
                   placeholder="Verwendungszweck..."
                   value={line.memo}
                   onChange={(e) => handleLineChange(idx, 'memo', e.target.value)}
-                  className="w-full bg-[#141a16] border border-[#232e26] rounded px-2 py-1 text-xs text-[#f1f5f2] focus:outline-none focus:border-[#adebb3]"
+                  className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 text-xs text-[var(--nothing-text)] focus:outline-none focus:border-[var(--nothing-text)]"
                 />
               </div>
 
               {/* Amount input */}
               <div className="w-28">
-                <label className="block text-[10px] text-[#8c9e91] mb-1 text-right">Betrag (€)</label>
+                <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1 text-right">Betrag (€)</label>
                 <input
                   type="text"
                   value={line.amountStr}
                   onChange={(e) => handleLineChange(idx, 'amountStr', e.target.value)}
-                  className="w-full bg-[#141a16] border border-[#232e26] rounded px-2 py-1 text-xs text-right font-mono tabular-nums text-[#f1f5f2] focus:outline-none focus:border-[#adebb3]"
+                  className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-2.5 py-1.5 text-xs text-right font-mono tabular-nums text-[var(--nothing-text)] focus:outline-none focus:border-[var(--nothing-text)]"
                 />
               </div>
 
               {/* Delete line button */}
               <div className="pt-4">
                 <button
+                  type="button"
                   onClick={() => handleRemoveLine(idx)}
                   disabled={lines.length <= 2}
-                  className={`p-1 rounded ${
+                  className={`p-1.5 rounded-full aspect-square ${
                     lines.length <= 2
-                      ? 'text-[#232e26] cursor-not-allowed'
-                      : 'text-[#8c9e91] hover:text-[#e8706d] transition-colors'
+                      ? 'text-[var(--nothing-border)] cursor-not-allowed'
+                      : 'text-[var(--nothing-muted)] hover:text-[#D71921] cursor-pointer'
                   }`}
                   title="Zeile entfernen"
                 >
@@ -205,25 +213,26 @@ export const SplitTransactionModal: React.FC<SplitTransactionModalProps> = ({
 
         {/* Add Split Line Button */}
         <button
+          type="button"
           onClick={handleAddLine}
-          className="mt-3 flex items-center gap-1.5 text-xs text-[#adebb3] hover:underline self-start font-medium"
+          className="mt-3 flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-[var(--nothing-text)] hover:underline self-start font-semibold cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Weitere Split-Zeile hinzufügen</span>
         </button>
 
         {/* Remaining Calculation Footer */}
-        <div className="mt-4 pt-3 border-t border-[#232e26] flex items-center justify-between text-xs font-mono tabular-nums">
+        <div className="mt-4 pt-3 border-t border-[var(--nothing-border)] flex items-center justify-between text-xs font-mono tabular-nums">
           <div className="flex items-center gap-4">
             <div>
-              <span className="text-[#8c9e91] block text-[10px] uppercase font-sans">Zugewiesen</span>
-              <span className="text-[#f1f5f2] font-semibold">{formatCurrency(currentAssignedCents)}</span>
+              <span className="text-[var(--nothing-muted)] block font-mono text-[9px] uppercase tracking-wider">Zugewiesen</span>
+              <span className="text-[var(--nothing-text)] font-bold">{formatCurrency(currentAssignedCents)}</span>
             </div>
             <div>
-              <span className="text-[#8c9e91] block text-[10px] uppercase font-sans">Verbleibend</span>
+              <span className="text-[var(--nothing-muted)] block font-mono text-[9px] uppercase tracking-wider">Verbleibend</span>
               <span
-                className={`font-semibold ${
-                  isBalanced ? 'text-[#adebb3]' : 'text-[#e8706d]'
+                className={`font-bold ${
+                  isBalanced ? 'text-[var(--nothing-sage)]' : 'text-[#D71921]'
                 }`}
               >
                 {formatCurrency(remainingCents)}
@@ -233,18 +242,20 @@ export const SplitTransactionModal: React.FC<SplitTransactionModalProps> = ({
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onClose}
-              className="px-3 py-1.5 border border-[#232e26] text-xs text-[#8c9e91] hover:text-[#f1f5f2] rounded transition-colors"
+              className="px-4 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
             >
               Abbrechen
             </button>
             <button
+              type="button"
               onClick={handleSave}
               disabled={!isBalanced}
-              className={`px-4 py-1.5 rounded text-xs font-semibold transition-colors ${
+              className={`px-4 py-1.5 rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer ${
                 isBalanced
-                  ? 'bg-[#adebb3] text-[#0d110e] hover:bg-[#adebb3]/90'
-                  : 'bg-[#232e26] text-[#8c9e91] cursor-not-allowed'
+                  ? 'bg-[#D71921] text-white hover:opacity-90'
+                  : 'bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)] border border-[var(--nothing-border)] cursor-not-allowed opacity-50'
               }`}
             >
               Split speichern
@@ -253,7 +264,7 @@ export const SplitTransactionModal: React.FC<SplitTransactionModalProps> = ({
         </div>
 
         {errorMsg && (
-          <div className="mt-3 p-2 bg-[#e8706d]/10 border border-[#e8706d]/30 text-[#e8706d] text-xs rounded">
+          <div className="mt-3 p-2.5 bg-[#D71921]/10 border border-[#D71921]/30 text-[#D71921] font-mono text-xs rounded-2xl">
             {errorMsg}
           </div>
         )}
@@ -261,4 +272,3 @@ export const SplitTransactionModal: React.FC<SplitTransactionModalProps> = ({
     </div>
   );
 };
-

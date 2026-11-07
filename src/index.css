@@ -1,44 +1,103 @@
 @import "tailwindcss";
 
-@theme {
-  --color-mint-50: #f2fbf4;
-  --color-mint-100: #e3f7e7;
-  --color-mint-200: #c5f0cc;
-  --color-mint-300: #adebb3;
-  --color-mint-400: #7fd989;
-  --color-mint-500: #54be60;
-  --color-mint-600: #3ea049;
-  --color-mint-700: #337d3b;
-  --color-mint-800: #2c6332;
-  --color-mint-900: #1a4023;
-  --color-mint-950: #0f2414;
+/* Default: LIGHT MODE ("High-Contrast Swiss Minimalist") */
+:root {
+  --nothing-bg: #F2F2F4;
+  --nothing-surface: #FFFFFF;
+  --nothing-subsurface: #E8E8EC;
+  --nothing-border: rgba(0, 0, 0, 0.12);
+  --nothing-border-hover: rgba(0, 0, 0, 0.28);
+  --nothing-text: #111111;
+  --nothing-muted: #636366;
+  --nothing-accent: #D71921;
+  --nothing-accent-on: #FFFFFF;
 
-  --color-app-dark: #0d110e;
-  --color-surface-dark: #141a16;
-  --color-sidebar-dark: #0a0d0b;
-  --color-border-dark: #232e26;
-  --color-text-dark: #f1f5f2;
-  --color-muted-dark: #8c9e91;
+  --nothing-sage: #2E7D32;
+  --nothing-amber: #D9A000;
+  --nothing-blue: #3B6B9A;
+
+  --nothing-font-display: "NDot55", "JetBrains Mono", "SF Mono", "Courier New", monospace;
+  --nothing-font-mono: "JetBrains Mono", "SF Mono", "Courier New", monospace;
+  --nothing-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
 }
 
-:root {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* DARK MODE OVERRIDES ("OLED & Anthracite Standard Nothing Dark") */
+[data-theme="dark"],
+.dark {
+  --nothing-bg: #0D0D0F;
+  --nothing-surface: #1E1E22;
+  --nothing-subsurface: #28282C;
+  --nothing-border: rgba(255, 255, 255, 0.12);
+  --nothing-border-hover: rgba(255, 255, 255, 0.28);
+  --nothing-text: #FFFFFF;
+  --nothing-muted: #8E8E93;
+  --nothing-accent: #D71921;
+  --nothing-accent-on: #FFFFFF;
+
+  --nothing-sage: #4E8B63;
+  --nothing-amber: #F5C518;
+  --nothing-blue: #5B7B9A;
   color-scheme: dark;
 }
 
+@theme {
+  --color-nothing-bg: var(--nothing-bg);
+  --color-nothing-surface: var(--nothing-surface);
+  --color-nothing-subsurface: var(--nothing-subsurface);
+  --color-nothing-border: var(--nothing-border);
+  --color-nothing-border-hover: var(--nothing-border-hover);
+  --color-nothing-text: var(--nothing-text);
+  --color-nothing-muted: var(--nothing-muted);
+  --color-nothing-accent: #D71921;
+  --color-nothing-accent-on: #FFFFFF;
+  --color-nothing-sage: var(--nothing-sage);
+  --color-nothing-amber: var(--nothing-amber);
+  --color-nothing-blue: var(--nothing-blue);
+
+  --font-display: var(--nothing-font-display);
+  --font-mono: var(--nothing-font-mono);
+  --font-sans: var(--nothing-font-sans);
+}
+
+/* Global Reset for Nothing OS Aesthetics */
 body {
   margin: 0;
-  min-height: 100vh;
-  background-color: #0d110e;
-  color: #f1f5f2;
+  background-color: var(--nothing-bg);
+  color: var(--nothing-text);
+  font-family: var(--nothing-font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure tabular numerals for currency & ledger values */
+/* Strip all default drop shadows */
+*, *::before, *::after {
+  box-shadow: none !important;
+}
+
+/* Monospace & Tabular figures for data integrity */
+.font-nothing-display {
+  font-family: var(--nothing-font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
+/* Custom Minimalist Desktop Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--nothing-border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nothing-muted);
+}
