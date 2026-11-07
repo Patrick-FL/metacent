@@ -16,6 +16,10 @@ import {
   Copy,
   Split,
   FilterX,
+  Check,
+  Minus,
+  Tag,
+  X,
 } from 'lucide-react';
 import { SplitTransactionModal } from './SplitTransactionModal';
 import {
@@ -48,8 +52,12 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   const [isAddingInline, setIsAddingInline] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [columnFilters, setColumnFilters] = useState<AllFilters>(emptyFilters);
-  const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
+  const [selectedTxIds, setSelectedTxIds] = useState<Set<string>>(new Set());
+  const [lastAnchorId, setLastAnchorId] = useState<string | null>(null);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
+  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const categoryMenuRef = useRef<HTMLDivElement>(null);
 
   // Inline entry state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -61,7 +69,44 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
 
   const transactions = storage.getTransactions(account.id);
   const categories = storage.getCategories();
-  const selectedTx = selectedTxId ? transactions.find((t) => t.id === selectedTxId) : null;
+
+  // Reset selection on account change
+  useEffect(() => {
+    setSelectedTxIds(new Set());
+    setLastAnchorId(null);
+  }, [account.id]);
+
+  // Close category menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(e.target as Node)) {
+        setIsCategoryMenuOpen(false);
+      }
+    };
+    if (isCategoryMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCategoryMenuOpen]);
+
+  const singleSelectedId = selectedTxIds.size === 1 ? Array.from(selectedTxIds)[0] : null;
+  const selectedTx = singleSelectedId ? transactions.find((t) => t.id === singleSelectedId) : null;
+
+  const selectedTransactions = useMemo(
+    () => transactions.filter((t) => selectedTxIds.has(t.id)),
+    [transactions, selectedTxIds]
+  );
+
+  const selectedTotalCents = useMemo(
+    () => selectedTransactions.reduce((acc, t) => acc + t.amountCents, 0),
+    [selectedTransactions]
+  );
+
+  const filteredCategoriesForMenu = useMemo(() => {
+    if (!categorySearch.trim()) return categories;
+    const q = categorySearch.toLowerCase();
+    return categories.filter((c) => c.name.toLowerCase().includes(q));
+  }, [categories, categorySearch]);
 
   // Derive unique payees for the filter dropdown
   const uniquePayees = useMemo(() => {
@@ -109,58 +154,93 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   // Global keyboard shortcuts within register
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isInput =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement;
+
+      // Select All: Ctrl+A / Cmd+A
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && !isInput) {
+        e.preventDefault();
+        setSelectedTxIds(new Set(filteredTransactions.map((t) => t.id)));
+        return;
+      }
+
+      // Escape -> Clear selection
+      if (e.key === 'Escape' && !isAddingInline && !isSplitModalOpen) {
+        if (selectedTxIds.size > 0) {
+          e.preventDefault();
+          setSelectedTxIds(new Set());
+          return;
+        }
+      }
+
       // Shift+N -> Add transaction
       if (e.shiftKey && e.key === 'N') {
         e.preventDefault();
         setIsAddingInline(true);
+        return;
       }
       // Shift+E -> Reconcile
       if (e.shiftKey && e.key === 'E') {
         e.preventDefault();
         onOpenReconcile();
+        return;
       }
-      // Shift+D -> Duplicate transaction
-      if (e.shiftKey && (e.key === 'D' || e.key === 'd')) {
-        if (selectedTxId && !isAddingInline) {
+      // Shift+D -> Duplicate selected transactions
+      if (e.shiftKey && (e.key === 'D' || e.key === 'd') && !isInput) {
+        if (selectedTxIds.size > 0 && !isAddingInline) {
           e.preventDefault();
-          const dup = storage.duplicateTransaction(selectedTxId);
-          if (dup) {
-            setSelectedTxId(dup.id);
-            onUpdate();
-          }
+          const dups = storage.duplicateTransactions(Array.from(selectedTxIds));
+          setSelectedTxIds(new Set(dups.map((d) => d.id)));
+          onUpdate();
+          return;
         }
       }
-      // S -> Split transaction
-      if (
-        (e.key === 's' || e.key === 'S') &&
-        !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
-      ) {
-        if (selectedTxId && !isAddingInline) {
+      // S -> Split transaction (only when single selected)
+      if ((e.key === 's' || e.key === 'S') && !isInput) {
+        if (selectedTxIds.size === 1 && !isAddingInline) {
           e.preventDefault();
           setIsSplitModalOpen(true);
+          return;
         }
       }
-      // C -> Toggle cleared on selected transaction
-      if (e.key === 'c' || e.key === 'C') {
-        if (selectedTxId && !isAddingInline) {
+      // C -> Toggle cleared on selected transactions
+      if ((e.key === 'c' || e.key === 'C') && !isInput) {
+        if (selectedTxIds.size > 0 && !isAddingInline) {
           e.preventDefault();
-          storage.toggleCleared(selectedTxId);
+          const selectedList = transactions.filter((t) => selectedTxIds.has(t.id));
+          const hasUncleared = selectedList.some((t) => t.clearedStatus === 'uncleared');
+          storage.setClearedStatusForTransactions(
+            Array.from(selectedTxIds),
+            hasUncleared ? 'cleared' : 'uncleared'
+          );
           onUpdate();
+          return;
         }
       }
-      // Delete -> Delete selected transaction
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedTxId && !isAddingInline) {
+      // Delete / Backspace -> Delete selected transactions
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !isInput) {
+        if (selectedTxIds.size > 0 && !isAddingInline) {
           e.preventDefault();
-          storage.deleteTransaction(selectedTxId);
-          setSelectedTxId(null);
+          storage.deleteTransactions(Array.from(selectedTxIds));
+          setSelectedTxIds(new Set());
           onUpdate();
+          return;
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedTxId, isAddingInline, onOpenReconcile, onUpdate]);
+  }, [
+    selectedTxIds,
+    filteredTransactions,
+    transactions,
+    isAddingInline,
+    isSplitModalOpen,
+    onOpenReconcile,
+    onUpdate,
+  ]);
 
   const handleSaveTransaction = (keepOpen: boolean = false) => {
     const outflowCents = parseCurrencyInput(outflowStr);
@@ -212,8 +292,127 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   const handleDeleteSelected = (txId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     storage.deleteTransaction(txId);
-    if (selectedTxId === txId) setSelectedTxId(null);
+    setSelectedTxIds((prev) => {
+      const next = new Set(prev);
+      next.delete(txId);
+      return next;
+    });
     onUpdate();
+  };
+
+  const handleBulkSetCategory = (catId: string | null) => {
+    storage.updateTransactions(Array.from(selectedTxIds), { categoryId: catId });
+    setIsCategoryMenuOpen(false);
+    onUpdate();
+  };
+
+  const handleBulkSetCleared = () => {
+    storage.setClearedStatusForTransactions(Array.from(selectedTxIds), 'cleared');
+    onUpdate();
+  };
+
+  const handleBulkSetUncleared = () => {
+    storage.setClearedStatusForTransactions(Array.from(selectedTxIds), 'uncleared');
+    onUpdate();
+  };
+
+  const handleBulkDuplicate = () => {
+    const dups = storage.duplicateTransactions(Array.from(selectedTxIds));
+    setSelectedTxIds(new Set(dups.map((d) => d.id)));
+    onUpdate();
+  };
+
+  const handleBulkDelete = () => {
+    storage.deleteTransactions(Array.from(selectedTxIds));
+    setSelectedTxIds(new Set());
+    onUpdate();
+  };
+
+  const isAllSelected =
+    filteredTransactions.length > 0 &&
+    filteredTransactions.every((t) => selectedTxIds.has(t.id));
+
+  const isSomeSelected =
+    !isAllSelected &&
+    filteredTransactions.some((t) => selectedTxIds.has(t.id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedTxIds((prev) => {
+        const next = new Set(prev);
+        filteredTransactions.forEach((t) => next.delete(t.id));
+        return next;
+      });
+    } else {
+      setSelectedTxIds((prev) => {
+        const next = new Set(prev);
+        filteredTransactions.forEach((t) => next.add(t.id));
+        return next;
+      });
+    }
+  };
+
+  const handleRowClick = (txId: string, e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, input, select, a')) {
+      return;
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      setSelectedTxIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(txId)) {
+          next.delete(txId);
+        } else {
+          next.add(txId);
+        }
+        return next;
+      });
+      setLastAnchorId(txId);
+    } else if (e.shiftKey) {
+      e.preventDefault();
+      const ids = filteredTransactions.map((t) => t.id);
+      const currentIndex = ids.indexOf(txId);
+      const anchorIndex = lastAnchorId ? ids.indexOf(lastAnchorId) : -1;
+
+      if (anchorIndex !== -1 && currentIndex !== -1) {
+        const start = Math.min(anchorIndex, currentIndex);
+        const end = Math.max(anchorIndex, currentIndex);
+        const rangeIds = ids.slice(start, end + 1);
+
+        setSelectedTxIds((prev) => {
+          if (e.ctrlKey || e.metaKey) {
+            const next = new Set(prev);
+            rangeIds.forEach((id) => next.add(id));
+            return next;
+          }
+          return new Set(rangeIds);
+        });
+      } else {
+        setSelectedTxIds(new Set([txId]));
+        setLastAnchorId(txId);
+      }
+    } else {
+      setSelectedTxIds(new Set([txId]));
+      setLastAnchorId(txId);
+    }
+  };
+
+  const handleCheckboxClick = (txId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (e.shiftKey) {
+      handleRowClick(txId, e);
+      return;
+    }
+    setSelectedTxIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(txId)) {
+        next.delete(txId);
+      } else {
+        next.add(txId);
+      }
+      return next;
+    });
+    setLastAnchorId(txId);
   };
 
   return (
@@ -304,46 +503,133 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
             <span>Datei importieren</span>
           </button>
 
-          {selectedTxId && (
-            <div className="flex items-center gap-1.5 pl-2 border-l border-[var(--nothing-border)]">
+          {selectedTxIds.size > 0 && (
+            <div className="flex items-center gap-2 pl-3 border-l border-[var(--nothing-border)] flex-wrap">
+              {/* Selected Count & Sum Pill */}
+              <div className="flex items-center gap-2 bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] px-3 py-1 rounded-full font-mono text-xs">
+                <span className="font-semibold text-[var(--nothing-text)]">
+                  {selectedTxIds.size} ausgewählt
+                </span>
+                <span className="text-[var(--nothing-muted)]">•</span>
+                <span
+                  className={`font-semibold tabular-nums ${
+                    selectedTotalCents > 0
+                      ? 'text-[var(--nothing-sage)]'
+                      : selectedTotalCents < 0
+                      ? 'text-[#D71921]'
+                      : 'text-[var(--nothing-muted)]'
+                  }`}
+                >
+                  Summe: {formatCurrency(selectedTotalCents)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTxIds(new Set())}
+                  title="Auswahl aufheben (Esc)"
+                  className="text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] cursor-pointer ml-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Category Assignment Dropdown */}
+              <div className="relative" ref={categoryMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
+                  title="Kategorie für markierte Buchungen zuweisen"
+                >
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>Kategorie</span>
+                </button>
+
+                {isCategoryMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1.5 w-60 bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-2xl shadow-none p-2 z-50">
+                    <input
+                      type="text"
+                      placeholder="Kategorie suchen..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      autoFocus
+                      className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-xl text-xs px-2.5 py-1.5 text-[var(--nothing-text)] placeholder-[var(--nothing-muted)] mb-2 focus:outline-none focus:border-[var(--nothing-border-hover)]"
+                    />
+                    <div className="max-h-52 overflow-y-auto space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleBulkSetCategory(null)}
+                        className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs text-[var(--nothing-muted)] hover:bg-[var(--nothing-subsurface)] hover:text-[var(--nothing-text)] transition-colors cursor-pointer"
+                      >
+                        Bereit zur Zuweisung (Keine)
+                      </button>
+                      {filteredCategoriesForMenu.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => handleBulkSetCategory(cat.id)}
+                          className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs text-[var(--nothing-text)] hover:bg-[var(--nothing-subsurface)] transition-colors cursor-pointer truncate"
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cleared Status Quick Buttons */}
               <button
                 type="button"
-                onClick={() => {
-                  const dup = storage.duplicateTransaction(selectedTxId);
-                  if (dup) {
-                    setSelectedTxId(dup.id);
-                    onUpdate();
-                  }
-                }}
+                onClick={handleBulkSetCleared}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
-                title="Ausgewählte Buchung duplizieren (Shift+D)"
+                title="Markierte Buchungen bestätigen (C)"
+              >
+                <Check className="w-3.5 h-3.5 text-[var(--nothing-sage)]" />
+                <span>Bestätigen</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBulkSetUncleared}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
+                title="Markierte Buchungen auf offen setzen"
+              >
+                <span>Auf Offen</span>
+              </button>
+
+              {/* Duplicate Button */}
+              <button
+                type="button"
+                onClick={handleBulkDuplicate}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
+                title="Markierte Buchungen duplizieren (Shift+D)"
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span>Duplizieren</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setIsSplitModalOpen(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
-                title="Buchung aufteilen (S)"
-              >
-                <Split className="w-3.5 h-3.5" />
-                <span>Aufteilen</span>
-              </button>
+              {/* Split (available only when single transaction is selected) */}
+              {selectedTxIds.size === 1 && (
+                <button
+                  type="button"
+                  onClick={() => setIsSplitModalOpen(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
+                  title="Buchung aufteilen (S)"
+                >
+                  <Split className="w-3.5 h-3.5" />
+                  <span>Aufteilen</span>
+                </button>
+              )}
 
+              {/* Delete Button */}
               <button
                 type="button"
-                onClick={() => {
-                  storage.deleteTransaction(selectedTxId);
-                  setSelectedTxId(null);
-                  onUpdate();
-                }}
+                onClick={handleBulkDelete}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[#D71921] text-[#D71921] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
-                title="Buchung löschen (Delete)"
+                title="Markierte Buchungen löschen (Delete)"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Löschen</span>
+                <span>{selectedTxIds.size > 1 ? `${selectedTxIds.size} Löschen` : 'Löschen'}</span>
               </button>
             </div>
           )}
@@ -459,7 +745,22 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
 
       {/* Table Header with Column Filters */}
       <div className="bg-[var(--nothing-subsurface)] border-b border-[var(--nothing-border)] font-mono text-xs uppercase tracking-wider text-[var(--nothing-muted)] font-medium grid grid-cols-12 px-6 py-2.5 select-none shrink-0 items-center">
-        <div className="col-span-2">
+        <div className="col-span-2 flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleToggleSelectAll}
+            title={isAllSelected ? 'Auswahl aufheben' : 'Alle auswählen (Strg+A)'}
+            className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+              isAllSelected
+                ? 'bg-[#D71921] border-[#D71921]'
+                : isSomeSelected
+                ? 'bg-[#D71921]/15 border-[#D71921]'
+                : 'border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] bg-[var(--nothing-surface)]'
+            }`}
+          >
+            {isAllSelected && <Check className="w-3 h-3 text-white" />}
+            {isSomeSelected && <Minus className="w-2.5 h-2.5 text-[#D71921]" />}
+          </button>
           <DateFilter
             value={columnFilters.date}
             onChange={(v) =>
@@ -587,12 +888,12 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
             const tx = filteredTransactions[virtualRow.index];
             const cat = categories.find((c) => c.id === tx.categoryId);
             const isNegative = tx.amountCents < 0;
-            const isSelected = selectedTxId === tx.id;
+            const isSelected = selectedTxIds.has(tx.id);
 
             return (
               <div
                 key={tx.id}
-                onClick={() => setSelectedTxId(tx.id)}
+                onClick={(e) => handleRowClick(tx.id, e)}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -601,11 +902,25 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className={`grid grid-cols-12 px-6 py-2 text-xs border-b border-[var(--nothing-border)] items-center transition-colors font-mono tabular-nums cursor-pointer ${
+                className={`grid grid-cols-12 px-6 py-2 text-xs border-b border-[var(--nothing-border)] items-center transition-colors font-mono tabular-nums select-none cursor-pointer ${
                   isSelected ? 'bg-[var(--nothing-subsurface)] border-l-2 border-l-[#D71921]' : 'hover:bg-[var(--nothing-subsurface)]/50'
                 }`}
               >
-                <span className="col-span-2 text-[var(--nothing-muted)] font-mono">{tx.date}</span>
+                <div className="col-span-2 flex items-center gap-2.5 min-w-0">
+                  <button
+                    type="button"
+                    onClick={(e) => handleCheckboxClick(tx.id, e)}
+                    title={isSelected ? 'Auswahl aufheben' : 'Auswählen'}
+                    className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#D71921] border-[#D71921]'
+                        : 'border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] bg-[var(--nothing-surface)]'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                  </button>
+                  <span className="text-[var(--nothing-muted)] font-mono truncate">{tx.date}</span>
+                </div>
                 <span className="col-span-3 font-medium text-[var(--nothing-text)] font-sans truncate flex items-center gap-1.5">
                   {tx.aiSuggested && (
                     <span title="KI-Kategorisiert (Ollama)">
@@ -672,7 +987,8 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
           categories={categories}
           onClose={() => setIsSplitModalOpen(false)}
           onSuccess={() => {
-            setSelectedTxId(null);
+            setSelectedTxIds(new Set());
+            setLastAnchorId(null);
             onUpdate();
           }}
         />

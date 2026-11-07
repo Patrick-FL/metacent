@@ -8,6 +8,8 @@ import {
   detectHeaderRow,
 } from '../../services/csvParser';
 import { categorizeWithOllama, fallbackHeuristic, isOllamaAvailable } from '../../services/ollama';
+import { CategoryCombobox } from '../common/CategoryCombobox';
+import { RuleDefinitionModal } from './RuleDefinitionModal';
 import {
   X,
   Upload,
@@ -20,6 +22,7 @@ import {
   Sliders,
   CheckCircle2,
   FileText,
+  BookmarkPlus,
 } from 'lucide-react';
 
 interface FileImportModalProps {
@@ -42,6 +45,7 @@ interface ParsedRowPreview {
   fitid?: string;
   isDuplicate: boolean;
   isUserModified?: boolean;
+  raw?: Record<string, string>;
 }
 
 export const FileImportModal: React.FC<FileImportModalProps> = ({
@@ -61,17 +65,20 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
   const [showSaveProfileModal, setShowSaveProfileModal] = useState<boolean>(false);
   const [saveProfileName, setSaveProfileName] = useState<string>('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [editingRuleRow, setEditingRuleRow] = useState<ParsedRowPreview | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const profiles = useMemo(() => storage.getImportProfiles(account.id), [account.id, isOpen]);
   const categories = useMemo(() => storage.getCategories(), [isOpen]);
+  const groups = useMemo(() => storage.getCategoryGroups(), [isOpen]);
 
   // Reset internal state when modal closes/opens
   useEffect(() => {
     if (isOpen) {
       setParseError(null);
       setSaveSuccessMsg(null);
+      setEditingRuleRow(null);
       if (profiles.length > 0 && !selectedProfileId) {
         setSelectedProfileId(profiles[0].id);
       }
@@ -82,6 +89,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
       setDetectedHeaders([]);
       setActiveProfile(null);
       setShowSaveProfileModal(false);
+      setEditingRuleRow(null);
     }
   }, [isOpen, profiles]);
 
@@ -132,6 +140,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
           ruleInfo,
           fitid,
           isDuplicate,
+          raw: item.raw,
         };
       });
 
@@ -263,6 +272,7 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
     setDetectedHeaders([]);
     setActiveProfile(null);
     setParseError(null);
+    setEditingRuleRow(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -320,6 +330,60 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
     setShowSaveProfileModal(false);
     setSaveSuccessMsg(`Vorlage "${profileToSave.profileName}" erfolgreich gespeichert!`);
     setTimeout(() => setSaveSuccessMsg(null), 4000);
+  };
+
+  /**
+   * Adds and persists a new matching rule from the RuleDefinitionModal into activeProfile.
+   * Immediately updates matching preview rows live.
+   */
+  const handleSaveRuleFromModal = (rule: { sourceField: string; pattern: string; targetCategoryId: string }) => {
+    if (!activeProfile || !rawContent) return;
+
+    const updatedProfile: ImportProfile = {
+      ...activeProfile,
+      categoryMatchRules: [
+        ...(activeProfile.categoryMatchRules || []),
+        rule,
+      ],
+    };
+
+    // 1. Persist rule inside the template
+    storage.saveImportProfile(updatedProfile);
+    setActiveProfile(updatedProfile);
+
+    // 2. Immediately apply to matching rows in current preview
+    const q = rule.pattern.toLowerCase();
+    let updatedCount = 0;
+
+    const updatedRows = previewRows.map((r) => {
+      let val = '';
+      if (r.raw && r.raw[rule.sourceField]) {
+        val = r.raw[rule.sourceField];
+      } else if (rule.sourceField === activeProfile.fieldMappings.payee) {
+        val = r.payee;
+      } else if (rule.sourceField === activeProfile.fieldMappings.memo) {
+        val = r.memo;
+      } else {
+        val = r.payee;
+      }
+
+      if (val.toLowerCase().includes(q)) {
+        updatedCount++;
+        return {
+          ...r,
+          suggestedCategoryId: rule.targetCategoryId,
+          matchType: 'rule' as const,
+          ruleInfo: `Regel: "${rule.pattern}" in ${rule.sourceField}`,
+          isUserModified: false,
+        };
+      }
+      return r;
+    });
+
+    setPreviewRows(updatedRows);
+    setSaveSuccessMsg(`Regel für "${rule.pattern}" im Template gespeichert (${updatedCount} Buchungen aktualisiert).`);
+    setTimeout(() => setSaveSuccessMsg(null), 4000);
+    setEditingRuleRow(null);
   };
 
   /**
@@ -723,13 +787,13 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                 </div>
               ) : (
                 <table className="w-full text-xs text-left border-collapse">
-                  <thead className="sticky top-0 bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)] uppercase font-mono text-[10px] border-b border-[var(--nothing-border)]">
+                  <thead className="sticky top-0 bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)] uppercase font-mono text-[10px] border-b border-[var(--nothing-border)] z-10">
                     <tr>
                       <th className="py-2.5 px-3">Datum</th>
                       <th className="py-2.5 px-3">Empfänger</th>
                       <th className="py-2.5 px-3 text-right">Betrag</th>
                       <th className="py-2.5 px-3">Notiz / Zweck</th>
-                      <th className="py-2.5 px-3">Kategorie</th>
+                      <th className="py-2.5 px-3">Kategorie & Regel</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -779,11 +843,11 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                           </td>
 
                           {/* Memo */}
-                          <td className="py-2 px-3 text-[var(--nothing-muted)] font-mono text-[10px] max-w-[150px] truncate" title={row.memo}>
+                          <td className="py-2 px-3 text-[var(--nothing-muted)] font-mono text-[10px] max-w-[140px] truncate" title={row.memo}>
                             {row.memo || '—'}
                           </td>
 
-                          {/* Category */}
+                          {/* Category with Quick-Search Combobox and Rule Definition */}
                           <td className="py-2 px-3">
                             {row.isDuplicate ? (
                               <span className="font-mono text-[9px] bg-[#D71921]/15 border border-[#D71921]/30 text-[#D71921] px-2 py-0.5 rounded-full uppercase">
@@ -791,24 +855,34 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                               </span>
                             ) : (
                               <div className="flex items-center gap-1.5">
-                                <select
+                                <CategoryCombobox
+                                  categories={categories}
+                                  groups={groups}
                                   value={row.suggestedCategoryId}
-                                  onChange={(e) => {
+                                  onChange={(newCatId) => {
                                     const newRows = [...previewRows];
-                                    newRows[idx].suggestedCategoryId = e.target.value;
+                                    newRows[idx].suggestedCategoryId = newCatId;
                                     newRows[idx].matchType = 'manual';
                                     newRows[idx].isUserModified = true;
                                     setPreviewRows(newRows);
                                   }}
-                                  className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-xl px-2 py-0.5 text-xs text-[var(--nothing-text)] font-sans focus:outline-none"
-                                >
-                                  {categories.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.name}
-                                    </option>
-                                  ))}
-                                </select>
+                                />
 
+                                {/* Icon to define / customize rule */}
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingRuleRow(row)}
+                                  className={`p-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+                                    row.isUserModified
+                                      ? 'border-[#D71921] bg-[#D71921]/15 text-[#D71921] hover:bg-[#D71921]/25 ring-1 ring-[#D71921]/40'
+                                      : 'border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)] hover:text-[#D71921] hover:border-[#D71921]/50'
+                                  }`}
+                                  title="Diesen Text als automatische Regel für die Vorlage definieren / verfeinern"
+                                >
+                                  <BookmarkPlus className="w-3.5 h-3.5" />
+                                </button>
+
+                                {/* Badges */}
                                 {row.matchType === 'ollama' && (
                                   <span
                                     className="font-mono text-[8px] uppercase px-1.5 py-0.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] flex items-center gap-1 shrink-0"
@@ -826,8 +900,12 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
                                   </span>
                                 )}
                                 {row.isUserModified && (
-                                  <span className="font-mono text-[8px] uppercase px-1.5 py-0.5 rounded-full border border-[#D71921]/30 bg-[#D71921]/10 text-[#D71921] font-semibold shrink-0">
-                                    Gelernt
+                                  <span
+                                    className="font-mono text-[8px] uppercase px-1.5 py-0.5 rounded-full border border-[#D71921]/30 bg-[#D71921]/10 text-[#D71921] font-semibold shrink-0 cursor-pointer"
+                                    onClick={() => setEditingRuleRow(row)}
+                                    title="Klicken, um diese Zuordnung dauerhaft als Vorlagen-Regel zu speichern"
+                                  >
+                                    Manuell
                                   </span>
                                 )}
                               </div>
@@ -882,8 +960,22 @@ export const FileImportModal: React.FC<FileImportModalProps> = ({
           </div>
         </div>
 
+        {/* Rule Definition Modal Overlay */}
+        {editingRuleRow && activeProfile && (
+          <RuleDefinitionModal
+            isOpen={true}
+            row={editingRuleRow}
+            activeProfile={activeProfile}
+            categories={categories}
+            groups={groups}
+            previewRows={previewRows}
+            onClose={() => setEditingRuleRow(null)}
+            onSaveRule={handleSaveRuleFromModal}
+          />
+        )}
+
         {/* Mini Save Profile Dialog Overlay */}
-        {showSaveProfileModal && (
+        {showSaveProfileModal && activeProfile && (
           <div className="fixed inset-0 z-60 bg-black/60 flex items-center justify-center p-4">
             <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl">
               <h4 className="font-bold text-sm text-[var(--nothing-text)] font-mono uppercase tracking-wider">

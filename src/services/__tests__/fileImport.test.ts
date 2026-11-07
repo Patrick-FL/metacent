@@ -126,5 +126,28 @@ describe('Feature: File Import Acceptance Scenarios', () => {
     );
     expect(isNotDup).toBe(false);
   });
+
+  it('Scenario 6: Partial contains rule matches multiple variations with numbers or suffixes', () => {
+    const profile = storage.getImportProfiles('acc-giro-1')[0];
+    // Add a partial rule "REWE"
+    profile.categoryMatchRules.push({
+      sourceField: 'Bezeichnung',
+      pattern: 'REWE',
+      targetCategoryId: 'cat-lebensmittel',
+    });
+    storage.saveImportProfile(profile);
+
+    // CSV contains branches with different numbers and suffixes
+    const csvContent = `Datum;Typ;Bezeichnung;Betrag;Saldo
+24.10.2026;Kartenzahlung;REWE Filiale 412 Muenchen;-35,50;1200,00
+20.10.2026;Kartenzahlung;REWE City Markt 99;-12,80;1164,50`;
+
+    const parsed = parseCsvFile(csvContent, profile);
+    expect(parsed.length).toBe(2);
+    expect(parsed[0].suggestedCategoryId).toBe('cat-lebensmittel');
+    expect(parsed[0].matchRuleName).toContain('REWE');
+    expect(parsed[1].suggestedCategoryId).toBe('cat-lebensmittel');
+    expect(parsed[1].matchRuleName).toContain('REWE');
+  });
 });
 

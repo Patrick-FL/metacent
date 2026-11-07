@@ -295,5 +295,117 @@ describe('Storage Operations & State Machine', () => {
     storage.undo();
     expect(storage.getMonthlyRollup('2026-11', 'cat-lebensmittel').assignedCents).toBe(0);
   });
+
+  it('performs bulk operations: update, clear status, duplicate, delete with 1-step undo', () => {
+    const acc = storage.getAccounts()[0];
+    const tx1 = storage.addTransaction({
+      accountId: acc.id,
+      date: '2026-11-01',
+      payee: 'Bulk Tx 1',
+      categoryId: 'cat-lebensmittel',
+      memo: 'Memo 1',
+      amountCents: -1000,
+      clearedStatus: 'uncleared',
+      isApproved: true,
+      flag: 0,
+      transferAccountId: null,
+      transferTransactionId: null,
+      importFitid: null,
+    });
+    const tx2 = storage.addTransaction({
+      accountId: acc.id,
+      date: '2026-11-02',
+      payee: 'Bulk Tx 2',
+      categoryId: 'cat-lebensmittel',
+      memo: 'Memo 2',
+      amountCents: -2000,
+      clearedStatus: 'uncleared',
+      isApproved: true,
+      flag: 0,
+      transferAccountId: null,
+      transferTransactionId: null,
+      importFitid: null,
+    });
+
+    const ids = [tx1.id, tx2.id];
+
+    // 1. Bulk set cleared status
+    const clearedCount = storage.setClearedStatusForTransactions(ids, 'cleared');
+    expect(clearedCount).toBe(2);
+    expect(storage.getTransactions().find((t) => t.id === tx1.id)?.clearedStatus).toBe('cleared');
+    expect(storage.getTransactions().find((t) => t.id === tx2.id)?.clearedStatus).toBe('cleared');
+
+    // 2. Bulk update category
+    const updatedCount = storage.updateTransactions(ids, { categoryId: 'cat-miete' });
+    expect(updatedCount).toBe(2);
+    expect(storage.getTransactions().find((t) => t.id === tx1.id)?.categoryId).toBe('cat-miete');
+    expect(storage.getTransactions().find((t) => t.id === tx2.id)?.categoryId).toBe('cat-miete');
+
+    // 3. Bulk duplicate
+    const dups = storage.duplicateTransactions(ids);
+    expect(dups.length).toBe(2);
+    expect(dups[0].memo).toContain('Kopie');
+
+    // 4. Bulk delete
+    const allIdsToDelete = [...ids, ...dups.map((d) => d.id)];
+    const deletedCount = storage.deleteTransactions(allIdsToDelete);
+    expect(deletedCount).toBe(4);
+    for (const id of allIdsToDelete) {
+      expect(storage.getTransactions().some((t) => t.id === id)).toBe(false);
+    }
+
+    // 5. Single undo restores all 4 deleted
+    storage.undo();
+    for (const id of allIdsToDelete) {
+      expect(storage.getTransactions().some((t) => t.id === id)).toBe(true);
+    }
+
+    // Clean up
+    storage.deleteTransactions(allIdsToDelete);
+  });
+
+  it('preserves reconciled status during bulk cleared status updates', () => {
+    const acc = storage.getAccounts()[0];
+    const tx1 = storage.addTransaction({
+      accountId: acc.id,
+      date: '2026-11-01',
+      payee: 'Normal Tx',
+      categoryId: null,
+      memo: '',
+      amountCents: -500,
+      clearedStatus: 'uncleared',
+      isApproved: true,
+      flag: 0,
+      transferAccountId: null,
+      transferTransactionId: null,
+      importFitid: null,
+    });
+    const tx2 = storage.addTransaction({
+      accountId: acc.id,
+      date: '2026-11-01',
+      payee: 'Reconciled Tx',
+      categoryId: null,
+      memo: '',
+      amountCents: -500,
+      clearedStatus: 'uncleared',
+      isApproved: true,
+      flag: 0,
+      transferAccountId: null,
+      transferTransactionId: null,
+      importFitid: null,
+    });
+
+    // Manually set tx2 to reconciled
+    storage.updateTransaction(tx2.id, { clearedStatus: 'reconciled' });
+
+    // Try to set both to cleared in bulk
+    storage.setClearedStatusForTransactions([tx1.id, tx2.id], 'cleared');
+
+    expect(storage.getTransactions().find((t) => t.id === tx1.id)?.clearedStatus).toBe('cleared');
+    expect(storage.getTransactions().find((t) => t.id === tx2.id)?.clearedStatus).toBe('reconciled');
+
+    // Clean up
+    storage.deleteTransactions([tx1.id, tx2.id]);
+  });
 });
 

@@ -7,6 +7,7 @@ import {
   ImportProfile,
   MonthlyCategoryRollup,
   Transaction,
+  ClearedStatus,
 } from '../types';
 
 const STORAGE_KEY = 'metacent_local_db_v1';
@@ -595,33 +596,134 @@ class StorageService {
     return tx;
   }
 
-  public deleteTransaction(id: string): boolean {
-    const index = this.data.transactions.findIndex((t) => t.id === id);
-    if (index === -1) return false;
+  public updateTransactions(ids: string[], partial: Partial<Transaction>): number {
+    const idSet = new Set(ids);
+    const targets = this.data.transactions.filter((t) => idSet.has(t.id));
+    if (targets.length === 0) return 0;
+
     this.snapshotForUndo();
 
-    const tx = this.data.transactions[index];
-    const acc = this.data.accounts.find((a) => a.id === tx.accountId);
-    if (acc) {
-      if (tx.clearedStatus === 'uncleared') {
-        acc.unclearedBalanceCents -= tx.amountCents;
-      } else {
-        acc.clearedBalanceCents -= tx.amountCents;
+    for (const tx of targets) {
+      const oldAmount = tx.amountCents;
+      const oldCleared = tx.clearedStatus;
+      const oldCategory = tx.categoryId;
+      const oldDate = tx.date;
+
+      Object.assign(tx, partial);
+      tx.updatedAt = Date.now();
+
+      const acc = this.data.accounts.find((a) => a.id === tx.accountId);
+      if (acc) {
+        // Revert old effect
+        if (oldCleared === 'uncleared') {
+          acc.unclearedBalanceCents -= oldAmount;
+        } else {
+          acc.clearedBalanceCents -= oldAmount;
+        }
+        // Apply new effect
+        if (tx.clearedStatus === 'uncleared') {
+          acc.unclearedBalanceCents += tx.amountCents;
+        } else {
+          acc.clearedBalanceCents += tx.amountCents;
+        }
+        acc.workingBalanceCents = acc.clearedBalanceCents + acc.unclearedBalanceCents;
       }
-      acc.workingBalanceCents = acc.clearedBalanceCents + acc.unclearedBalanceCents;
+
+      // Adjust rollups if amount, category, or month changed
+      if (oldCategory) {
+        const oldMonth = oldDate.substring(0, 7);
+        const oldKey = `${oldMonth}:${oldCategory}`;
+        if (this.data.rollups[oldKey]) {
+          this.data.rollups[oldKey].activityCents -= oldAmount;
+        }
+      }
+      if (tx.categoryId) {
+        const newMonth = tx.date.substring(0, 7);
+        const newKey = `${newMonth}:${tx.categoryId}`;
+        if (!this.data.rollups[newKey]) {
+          this.data.rollups[newKey] = {
+            budgetId: this.data.budget.id,
+            month: newMonth,
+            categoryId: tx.categoryId,
+            assignedCents: 0,
+            activityCents: 0,
+            note: '',
+            availableCents: 0,
+          };
+        }
+        this.data.rollups[newKey].activityCents += tx.amountCents;
+      }
     }
 
-    if (tx.categoryId) {
-      const month = tx.date.substring(0, 7);
-      const key = `${month}:${tx.categoryId}`;
-      if (this.data.rollups[key]) {
-        this.data.rollups[key].activityCents -= tx.amountCents;
-      }
-    }
-
-    this.data.transactions.splice(index, 1);
     this.save();
-    return true;
+    return targets.length;
+  }
+
+  public deleteTransactions(ids: string[]): number {
+    const idSet = new Set(ids);
+    const toDelete = this.data.transactions.filter((t) => idSet.has(t.id));
+    if (toDelete.length === 0) return 0;
+
+    this.snapshotForUndo();
+
+    for (const tx of toDelete) {
+      const acc = this.data.accounts.find((a) => a.id === tx.accountId);
+      if (acc) {
+        if (tx.clearedStatus === 'uncleared') {
+          acc.unclearedBalanceCents -= tx.amountCents;
+        } else {
+          acc.clearedBalanceCents -= tx.amountCents;
+        }
+        acc.workingBalanceCents = acc.clearedBalanceCents + acc.unclearedBalanceCents;
+      }
+
+      if (tx.categoryId) {
+        const month = tx.date.substring(0, 7);
+        const key = `${month}:${tx.categoryId}`;
+        if (this.data.rollups[key]) {
+          this.data.rollups[key].activityCents -= tx.amountCents;
+        }
+      }
+    }
+
+    this.data.transactions = this.data.transactions.filter((t) => !idSet.has(t.id));
+    this.save();
+    return toDelete.length;
+  }
+
+  public deleteTransaction(id: string): boolean {
+    return this.deleteTransactions([id]) > 0;
+  }
+
+  public setClearedStatusForTransactions(ids: string[], status: ClearedStatus): number {
+    const idSet = new Set(ids);
+    const targets = this.data.transactions.filter(
+      (t) => idSet.has(t.id) && t.clearedStatus !== 'reconciled' && t.clearedStatus !== status
+    );
+    if (targets.length === 0) return 0;
+
+    this.snapshotForUndo();
+
+    for (const tx of targets) {
+      const oldStatus = tx.clearedStatus;
+      tx.clearedStatus = status;
+      tx.updatedAt = Date.now();
+
+      const acc = this.data.accounts.find((a) => a.id === tx.accountId);
+      if (acc) {
+        if (oldStatus === 'uncleared' && status === 'cleared') {
+          acc.unclearedBalanceCents -= tx.amountCents;
+          acc.clearedBalanceCents += tx.amountCents;
+        } else if (oldStatus === 'cleared' && status === 'uncleared') {
+          acc.clearedBalanceCents -= tx.amountCents;
+          acc.unclearedBalanceCents += tx.amountCents;
+        }
+        acc.workingBalanceCents = acc.clearedBalanceCents + acc.unclearedBalanceCents;
+      }
+    }
+
+    this.save();
+    return targets.length;
   }
 
   public toggleCleared(txId: string): Transaction | null {
@@ -808,23 +910,68 @@ class StorageService {
     this.save();
   }
 
+  public duplicateTransactions(ids: string[]): Transaction[] {
+    const idSet = new Set(ids);
+    const originals = this.data.transactions.filter((t) => idSet.has(t.id));
+    if (originals.length === 0) return [];
+
+    this.snapshotForUndo();
+    const created: Transaction[] = [];
+
+    for (const original of originals) {
+      const now = Date.now();
+      const newTx: Transaction = {
+        id: `tx-${now}-${Math.random().toString(36).substring(2, 7)}`,
+        accountId: original.accountId,
+        date: original.date,
+        payee: original.payee,
+        categoryId: original.categoryId,
+        memo: original.memo ? `${original.memo} (Kopie)` : 'Kopie',
+        amountCents: original.amountCents,
+        clearedStatus: 'uncleared',
+        isApproved: true,
+        flag: original.flag,
+        transferAccountId: original.transferAccountId,
+        transferTransactionId: null,
+        importFitid: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      this.data.transactions.unshift(newTx);
+      created.push(newTx);
+
+      const acc = this.data.accounts.find((a) => a.id === newTx.accountId);
+      if (acc) {
+        acc.unclearedBalanceCents += newTx.amountCents;
+        acc.workingBalanceCents = acc.clearedBalanceCents + acc.unclearedBalanceCents;
+      }
+
+      if (newTx.categoryId) {
+        const month = newTx.date.substring(0, 7);
+        const key = `${month}:${newTx.categoryId}`;
+        if (!this.data.rollups[key]) {
+          this.data.rollups[key] = {
+            budgetId: this.data.budget.id,
+            month,
+            categoryId: newTx.categoryId,
+            assignedCents: 0,
+            activityCents: 0,
+            note: '',
+            availableCents: 0,
+          };
+        }
+        this.data.rollups[key].activityCents += newTx.amountCents;
+      }
+    }
+
+    this.save();
+    return created;
+  }
+
   public duplicateTransaction(txId: string): Transaction | null {
-    const tx = this.data.transactions.find((t) => t.id === txId);
-    if (!tx) return null;
-    return this.addTransaction({
-      accountId: tx.accountId,
-      date: tx.date,
-      payee: tx.payee,
-      categoryId: tx.categoryId,
-      memo: tx.memo ? `${tx.memo} (Kopie)` : 'Kopie',
-      amountCents: tx.amountCents,
-      clearedStatus: 'uncleared',
-      isApproved: true,
-      flag: tx.flag,
-      transferAccountId: tx.transferAccountId,
-      transferTransactionId: null,
-      importFitid: null,
-    });
+    const list = this.duplicateTransactions([txId]);
+    return list[0] || null;
   }
 
   public splitTransaction(
