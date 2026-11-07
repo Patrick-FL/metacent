@@ -439,6 +439,18 @@ class StorageService {
     };
   }
 
+  public getAllRollupMonths(): string[] {
+    const months = new Set<string>();
+    for (const key of Object.keys(this.data.rollups)) {
+      const parts = key.split(':');
+      if (parts[0]) months.add(parts[0]);
+    }
+    for (const tx of this.data.transactions) {
+      if (tx.date) months.add(tx.date.substring(0, 7));
+    }
+    return Array.from(months).sort();
+  }
+
   public addTransaction(tx: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Transaction {
     this.snapshotForUndo();
     const newTx: Transaction = {

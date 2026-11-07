@@ -126,6 +126,36 @@ describe('targetCalculations', () => {
       expect(res.monthlyQuotaCents).toBe(100000);
       expect(res.neededThisMonthCents).toBe(100000);
     });
+
+    it('correctly calculates user example: Lebensmittel 270 € yearly due 01.12.2026 with 180 € starting balance', () => {
+      const lebensmittelTarget: Target = {
+        id: 'tgt-lm',
+        categoryId: 'cat-lebensmittel',
+        targetType: 'yearly',
+        amountCents: 27000, // 270,00 €
+        dueDate: '2026-12-01',
+        rolloverAction: 'set_aside',
+      };
+
+      // Starting balance from Sept (80 €) + Oct (100 €) = 180 €
+      // In Nov: 50 € assigned, 70 € spent -> available = 160 €
+      const res = evaluateCategoryTarget(
+        lebensmittelTarget,
+        5000,   // 50,00 € assigned in Nov
+        16000,  // 160,00 € available in Nov
+        '2026-11',
+        18000   // 180,00 € carried over from Sept & Oct
+      );
+
+      // Remaining deficit before Nov: 270 € - 180 € = 90 €
+      // Nov & Dec = 2 months -> 90 € / 2 = 45 € monthly quota!
+      expect(res.monthsRemaining).toBe(2);
+      expect(res.monthlyQuotaCents).toBe(4500); // 45,00 € Soll für Nov (NOT 135,00 €)
+      expect(res.neededThisMonthCents).toBe(0); // 50 € assigned >= 45 € quota -> fully funded!
+      expect(res.isFunded).toBe(true);
+      expect(res.overallNeededCents).toBe(4000); // 270 - (180 + 50) = 40 € remaining for Dec
+      expect(res.progressRatio).toBeCloseTo(23000 / 27000, 2); // ~85%
+    });
   });
 
   describe('Custom Target with dueDate', () => {

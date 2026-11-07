@@ -24,6 +24,7 @@ import {
   X,
   Layers,
   Copy,
+  BarChart2,
 } from 'lucide-react';
 
 interface PlanViewProps {
@@ -44,6 +45,9 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
   // Category renaming state
   const [isEditingCategoryName, setIsEditingCategoryName] = useState(false);
   const [categoryNameInput, setCategoryNameInput] = useState('');
+
+  // 6-Month history state
+  const [hoveredHistoryMonth, setHoveredHistoryMonth] = useState<string | null>(null);
 
   // Modals
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
@@ -77,12 +81,16 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
   const selectedAvailable = selectedCategory
     ? calc.categoryAvailableMap[selectedCategory.id] ?? 0
     : 0;
+  const selectedCategoryStartingBalance = selectedCategory
+    ? calc.categoryStartingBalanceMap[selectedCategory.id] ?? 0
+    : 0;
   const selectedCategoryTargetEval = selectedCategory?.target
     ? evaluateCategoryTarget(
         selectedCategory.target,
         selectedRollup?.assignedCents ?? 0,
         selectedAvailable,
-        selectedMonth
+        selectedMonth,
+        selectedCategoryStartingBalance
       )
     : null;
 
@@ -92,6 +100,67 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
         .sort((a, b) => b.date.localeCompare(a.date))
     : [];
   const recentCategoryTransactions = categoryTransactions.slice(0, 5);
+
+  // 6-Month history calculation for the selected category (ending with selectedMonth)
+  const historyMonths = React.useMemo(() => {
+    const [yearStr, mStr] = selectedMonth.split('-');
+    const y = parseInt(yearStr, 10);
+    const m = parseInt(mStr, 10);
+    const result: string[] = [];
+    for (let i = 5; i >= 0; i--) {
+      let targetM = m - i;
+      let targetY = y;
+      while (targetM <= 0) {
+        targetM += 12;
+        targetY -= 1;
+      }
+      result.push(`${targetY}-${String(targetM).padStart(2, '0')}`);
+    }
+    return result;
+  }, [selectedMonth]);
+
+  const historyData = React.useMemo(() => {
+    if (!selectedCategory) return [];
+    const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
+    return historyMonths.map((m) => {
+      const rollup = storage.getMonthlyRollup(m, selectedCategory.id);
+      const assignedCents = rollup.assignedCents;
+
+      // Determine activity: rollup or category transactions in month
+      const txs = categoryTransactions.filter((tx) => tx.date.startsWith(m));
+      const txSum = txs.reduce((sum, tx) => sum + tx.amountCents, 0);
+      const rawActivityCents = rollup.activityCents !== 0 ? rollup.activityCents : txSum;
+      const spentCents = rawActivityCents < 0 ? Math.abs(rawActivityCents) : 0;
+
+      const [year, monthNum] = m.split('-');
+      const label = monthNames[parseInt(monthNum, 10) - 1].toUpperCase();
+
+      return {
+        month: m,
+        label,
+        year,
+        assignedCents,
+        activityCents: rawActivityCents,
+        spentCents,
+        isCurrent: m === selectedMonth,
+      };
+    });
+  }, [selectedCategory, historyMonths, categoryTransactions, selectedMonth]);
+
+  const maxHistoryCents = React.useMemo(() => {
+    const max = Math.max(
+      ...historyData.map((d) => Math.max(d.assignedCents, d.spentCents)),
+      0
+    );
+    return max > 0 ? max : 10000;
+  }, [historyData]);
+
+  const activeTelemetryItem = React.useMemo(() => {
+    if (!historyData.length) return null;
+    const targetMonth = hoveredHistoryMonth || selectedMonth;
+    return historyData.find((d) => d.month === targetMonth) || historyData[historyData.length - 1];
+  }, [historyData, hoveredHistoryMonth, selectedMonth]);
 
   useEffect(() => {
     if (selectedCategory) {
@@ -220,10 +289,14 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
     const amountCents = parseCurrencyInput(targetAmountStr);
     if (amountCents <= 0) return;
 
+    const effectiveDueDate = (targetType === 'yearly' || targetType === 'custom')
+      ? (targetDueDate || null)
+      : null;
+
     storage.setCategoryTarget(selectedCategoryId, {
       targetType,
       amountCents,
-      dueDate: targetDueDate || null,
+      dueDate: effectiveDueDate,
       rolloverAction: 'set_aside',
     });
     onUpdate();
@@ -407,8 +480,9 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                       const isSelected = selectedCategoryId === category.id;
                       const isEditing = editingCategoryId === category.id;
                       const target = category.target;
+                      const startingBalance = calc.categoryStartingBalanceMap[category.id] ?? 0;
                       const targetEval = target
-                        ? evaluateCategoryTarget(target, rollup.assignedCents, available, selectedMonth)
+                        ? evaluateCategoryTarget(target, rollup.assignedCents, available, selectedMonth, startingBalance)
                         : null;
                       const isTargetFunded = targetEval ? targetEval.isFunded : false;
                       const targetNeeded = targetEval ? targetEval.neededThisMonthCents : 0;
@@ -515,25 +589,8 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
           {selectedCategory ? (
             <div className="space-y-4">
               <div className="border-b border-[var(--nothing-border)] pb-3 mb-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-semibold text-[var(--nothing-muted)] uppercase tracking-widest">
-                    KATEGORIE // DETAILS
-                  </span>
-                  {!isEditingCategoryName && (
-                    <button
-                      type="button"
-                      onClick={handleStartRenameCategory}
-                      className="font-mono text-[11px] uppercase tracking-wider text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center gap-1 font-medium transition-colors p-1 rounded hover:bg-[var(--nothing-subsurface)] cursor-pointer"
-                      title="Kategorie umbenennen"
-                    >
-                      <Pencil className="w-3 h-3" />
-                      <span>Edit</span>
-                    </button>
-                  )}
-                </div>
-
                 {isEditingCategoryName ? (
-                  <div className="mt-2 space-y-2">
+                  <div className="space-y-2">
                     <input
                       type="text"
                       autoFocus
@@ -566,7 +623,7 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-1 flex items-center justify-between group">
+                  <div className="flex items-center justify-between gap-2">
                     <h3
                       onClick={handleStartRenameCategory}
                       className="text-base font-bold text-[var(--nothing-text)] cursor-pointer hover:underline transition-colors truncate"
@@ -574,6 +631,15 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                     >
                       {selectedCategory.name}
                     </h3>
+                    <button
+                      type="button"
+                      onClick={handleStartRenameCategory}
+                      className="font-mono text-[11px] uppercase tracking-wider text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center gap-1 font-medium transition-colors p-1 rounded hover:bg-[var(--nothing-subsurface)] cursor-pointer shrink-0"
+                      title="Kategorie umbenennen"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      <span>Edit</span>
+                    </button>
                   </div>
                 )}
 
@@ -636,10 +702,10 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
 
                 {selectedCategory.target && selectedCategoryTargetEval && (
                   <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl p-3 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)]">Status</span>
+                    <div className="flex items-start justify-between gap-3 text-xs">
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] shrink-0 pt-0.5">Status</span>
                       <span
-                        className={`font-mono text-xs font-semibold ${
+                        className={`font-mono text-xs font-semibold text-right leading-relaxed ${
                           selectedCategoryTargetEval.isFunded
                             ? 'text-[var(--nothing-sage)]'
                             : selectedCategoryTargetEval.isOverdue
@@ -699,15 +765,19 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                   />
                 </div>
 
-                <div>
-                  <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">Fälligkeitsdatum (optional)</label>
-                  <input
-                    type="date"
-                    value={targetDueDate}
-                    onChange={(e) => setTargetDueDate(e.target.value)}
-                    className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-3 py-1.5 text-xs text-[var(--nothing-text)] font-mono focus:outline-none focus:border-[var(--nothing-text)]"
-                  />
-                </div>
+                {(targetType === 'yearly' || targetType === 'custom') && (
+                  <div>
+                    <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
+                      {targetType === 'yearly' ? 'Fälligkeitsdatum der Jahreszahlung' : 'Zieldatum / Fälligkeit (optional)'}
+                    </label>
+                    <input
+                      type="date"
+                      value={targetDueDate}
+                      onChange={(e) => setTargetDueDate(e.target.value)}
+                      className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl px-3 py-1.5 text-xs text-[var(--nothing-text)] font-mono focus:outline-none focus:border-[var(--nothing-text)]"
+                    />
+                  </div>
+                )}
 
                 <button
                   type="button"
@@ -717,6 +787,177 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Ziel speichern</span>
                 </button>
+              </div>
+
+              {/* 6-Month History Bento Card: Budget vs Activity (Säulen) */}
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider font-semibold text-[var(--nothing-text)]">
+                    <BarChart2 className="w-3.5 h-3.5 text-[#D71921]" />
+                    <span>6-Monats-Verlauf</span>
+                  </div>
+                  <span className="font-mono text-[10px] text-[var(--nothing-muted)] uppercase tracking-wider">
+                    Letzte 6 Monate
+                  </span>
+                </div>
+
+                {/* Dynamic Telemetry Box (Stable fixed height, zero layout shift) */}
+                {activeTelemetryItem && (
+                  <div className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] rounded-xl p-2.5 flex items-center justify-between text-xs">
+                    <div className="min-w-0 pr-2">
+                      <div className="font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)] flex items-center gap-1.5">
+                        <span>{activeTelemetryItem.label} {activeTelemetryItem.year}</span>
+                        {activeTelemetryItem.isCurrent ? (
+                          <span className="text-[8px] px-1 py-0.2 rounded bg-[#D71921]/15 text-[#D71921] font-semibold">
+                            Aktuell
+                          </span>
+                        ) : (
+                          <span className="text-[8px] px-1 py-0.2 rounded bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)]">
+                            Vorschau
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-mono text-xs font-semibold text-[var(--nothing-text)] mt-0.5 tabular-nums truncate">
+                        Budget: {formatCurrency(activeTelemetryItem.assignedCents)}
+                      </div>
+                      {/* Fixed placeholder line: ensures identical height whether funded or not */}
+                      <div className="font-mono text-[9px] text-[var(--nothing-muted)] mt-0.5 h-3.5 flex items-center truncate">
+                        {activeTelemetryItem.assignedCents > 0
+                          ? `${Math.round((activeTelemetryItem.spentCents / activeTelemetryItem.assignedCents) * 100)} % ausgeschöpft`
+                          : activeTelemetryItem.spentCents > 0
+                          ? 'Ohne Budgetausweisung'
+                          : 'Kein Budget'}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">
+                        Aktivität
+                      </div>
+                      <div
+                        className={`font-mono text-xs font-semibold mt-0.5 tabular-nums ${
+                          activeTelemetryItem.spentCents > activeTelemetryItem.assignedCents
+                            ? 'text-[#D71921]'
+                            : 'text-[var(--nothing-text)]'
+                        }`}
+                      >
+                        {formatCurrency(activeTelemetryItem.activityCents)}
+                      </div>
+                      {/* Fixed placeholder line: ensures identical height whether overbudget or not */}
+                      <div className="h-3.5 flex items-center justify-end mt-0.5">
+                        {activeTelemetryItem.spentCents > activeTelemetryItem.assignedCents ? (
+                          <span className="font-mono text-[9px] text-[#D71921] font-semibold">
+                            +{formatCurrency(activeTelemetryItem.spentCents - activeTelemetryItem.assignedCents)} über Budget
+                          </span>
+                        ) : activeTelemetryItem.assignedCents > 0 ? (
+                          <span className="font-mono text-[9px] text-[var(--nothing-muted)]">
+                            {formatCurrency(activeTelemetryItem.assignedCents - activeTelemetryItem.spentCents)} verbleibend
+                          </span>
+                        ) : (
+                          <span className="font-mono text-[9px] text-[var(--nothing-muted)] opacity-40">
+                            –
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vertical Equalizer Säulen with Overlaid Bars */}
+                <div className="flex items-end justify-between gap-1.5 h-28 pt-3 pb-1 px-1 bg-[var(--nothing-surface)]/30 rounded-xl border border-[var(--nothing-border)]/40">
+                  {historyData.map((item) => {
+                    const isSelected = item.month === selectedMonth;
+                    const isHovered = item.month === hoveredHistoryMonth;
+                    const assignedHeightPercent = Math.min(100, Math.round((item.assignedCents / maxHistoryCents) * 100));
+                    const spentHeightPercent = Math.min(100, Math.round((item.spentCents / maxHistoryCents) * 100));
+                    const isOverbudget = item.spentCents > item.assignedCents;
+
+                    return (
+                      <div
+                        key={item.month}
+                        onMouseEnter={() => setHoveredHistoryMonth(item.month)}
+                        onMouseLeave={() => setHoveredHistoryMonth(null)}
+                        onClick={() => setSelectedMonth(item.month)}
+                        className={`flex-1 flex flex-col items-center h-full justify-end group cursor-pointer py-1 px-0.5 rounded-lg transition-colors ${
+                          isHovered ? 'bg-[var(--nothing-surface)]/70' : ''
+                        }`}
+                        title={`${item.label} ${item.year}: Budget ${formatCurrency(item.assignedCents)}, Aktivität ${formatCurrency(item.activityCents)}`}
+                      >
+                        {/* Column Track */}
+                        <div className="relative w-full flex justify-center items-end h-full">
+                          {/* Base Wider Assigned Bar (White / Surface) */}
+                          <div
+                            style={{
+                              height: `${Math.max(assignedHeightPercent, item.assignedCents > 0 ? 8 : 0)}%`,
+                            }}
+                            className={`w-[18px] bg-[var(--nothing-surface)] border rounded-t-full transition-all duration-200 ${
+                              isHovered || isSelected
+                                ? 'border-[var(--nothing-border-hover)] ring-1 ring-[var(--nothing-border-hover)]'
+                                : 'border-[var(--nothing-border)]'
+                            }`}
+                          />
+
+                          {/* Narrower Overlaid Activity Bar */}
+                          <div
+                            style={{
+                              height: `${Math.max(spentHeightPercent, item.spentCents > 0 ? 8 : 0)}%`,
+                            }}
+                            className={`w-[8px] absolute bottom-0 left-1/2 -translate-x-1/2 rounded-t-full transition-all duration-200 pointer-events-none ${
+                              isOverbudget
+                                ? 'bg-[#D71921]'
+                                : isHovered || isSelected
+                                ? 'bg-[var(--nothing-text)]'
+                                : 'bg-[var(--nothing-text)]/75'
+                            }`}
+                          />
+
+                          {/* Subtle baseline line when both are 0 */}
+                          {item.assignedCents === 0 && item.spentCents === 0 && (
+                            <div className="w-[18px] h-0.5 bg-[var(--nothing-border)] rounded-full mb-0.5" />
+                          )}
+                        </div>
+
+                        {/* Month Label & Indicator */}
+                        <div className="mt-2 flex flex-col items-center">
+                          <span
+                            className={`font-mono text-[10px] tracking-wider transition-colors ${
+                              isSelected
+                                ? 'font-bold text-[var(--nothing-text)]'
+                                : isHovered
+                                ? 'text-[var(--nothing-text)]'
+                                : 'text-[var(--nothing-muted)]'
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                          {isSelected ? (
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#D71921] mt-0.5" />
+                          ) : (
+                            <span className="w-1.5 h-1.5 mt-0.5" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Legend */}
+                <div className="pt-2 border-t border-[var(--nothing-border)]/60 flex items-center justify-between text-[10px] font-mono text-[var(--nothing-muted)]">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3.5 h-2 rounded-sm bg-[var(--nothing-surface)] border border-[var(--nothing-border)] inline-block" />
+                      <span>Zugewiesen</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-1.5 rounded-full bg-[var(--nothing-text)] inline-block" />
+                      <span>Aktivität</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#D71921] inline-block" />
+                      <span>Überzogen</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Linked Account Transactions Bento Card */}

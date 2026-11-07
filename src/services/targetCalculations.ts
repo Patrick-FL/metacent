@@ -39,7 +39,8 @@ export function evaluateCategoryTarget(
   target: Target,
   assignedCents: number,
   availableCents: number,
-  selectedMonth: string
+  selectedMonth: string,
+  startingBalanceCents: number = 0
 ): TargetEvaluation {
   const { targetType, amountCents, dueDate } = target;
 
@@ -105,24 +106,27 @@ export function evaluateCategoryTarget(
       : `${selectedMonth.split('-')[0]}-12-31`;
 
     const monthsRemaining = calculateRemainingMonths(selectedMonth, effectiveDueDate);
-    const existingAvailableBeforeMonth = Math.max(0, availableCents - assignedCents);
-    const overallNeededCents = Math.max(0, amountCents - availableCents);
+    const existingSavedBeforeMonth = startingBalanceCents > 0
+      ? startingBalanceCents
+      : Math.max(0, availableCents - assignedCents);
 
-    const isOverdue = monthsRemaining <= 0 && overallNeededCents > 0;
+    const remainingDeficit = Math.max(0, amountCents - existingSavedBeforeMonth);
+    const isOverdue = monthsRemaining <= 0 && remainingDeficit > 0;
 
     let monthlyQuotaCents: number;
     if (monthsRemaining <= 1) {
       // Fälligkeitsmonat oder überfällig: Restbetrag voll fällig
-      monthlyQuotaCents = Math.max(0, amountCents - existingAvailableBeforeMonth);
+      monthlyQuotaCents = remainingDeficit;
     } else {
       // Dynamische Ratenlogik: Restbetrag geteilt durch verbleibende Monate
-      const remainingDeficit = Math.max(0, amountCents - existingAvailableBeforeMonth);
       monthlyQuotaCents = Math.ceil(remainingDeficit / monthsRemaining);
     }
 
     const neededThisMonthCents = Math.max(0, monthlyQuotaCents - assignedCents);
+    const totalFundedTowardsTarget = existingSavedBeforeMonth + assignedCents;
+    const overallNeededCents = Math.max(0, amountCents - totalFundedTowardsTarget);
     const isFunded = assignedCents >= monthlyQuotaCents || overallNeededCents === 0;
-    const progressRatio = Math.min(1, Math.max(0, availableCents / amountCents));
+    const progressRatio = Math.min(1, Math.max(0, totalFundedTowardsTarget / amountCents));
 
     let statusDescription: string;
     if (overallNeededCents === 0) {
@@ -130,9 +134,9 @@ export function evaluateCategoryTarget(
     } else if (isOverdue) {
       statusDescription = `Überfällig: ${formatCurrency(overallNeededCents)} noch fällig`;
     } else if (isFunded) {
-      statusDescription = `Monatsrate erfüllt (${formatCurrency(monthlyQuotaCents)}/Monat)`;
+      statusDescription = `Monatsrate erfüllt (${formatCurrency(monthlyQuotaCents)}/Monat, noch ${monthsRemaining} Mon.)`;
     } else {
-      statusDescription = `${formatCurrency(neededThisMonthCents)} Monatsrate noch nötig (${monthsRemaining} Mon. verbleibend)`;
+      statusDescription = `${formatCurrency(neededThisMonthCents)} Monatsrate noch nötig (noch ${monthsRemaining} Mon.)`;
     }
 
     return {
@@ -151,21 +155,25 @@ export function evaluateCategoryTarget(
   if (dueDate && dueDate.trim() !== '') {
     // Custom mit Fälligkeitsdatum -> Ratenlogik
     const monthsRemaining = calculateRemainingMonths(selectedMonth, dueDate);
-    const existingAvailableBeforeMonth = Math.max(0, availableCents - assignedCents);
-    const overallNeededCents = Math.max(0, amountCents - availableCents);
-    const isOverdue = monthsRemaining <= 0 && overallNeededCents > 0;
+    const existingSavedBeforeMonth = startingBalanceCents > 0
+      ? startingBalanceCents
+      : Math.max(0, availableCents - assignedCents);
+
+    const remainingDeficit = Math.max(0, amountCents - existingSavedBeforeMonth);
+    const isOverdue = monthsRemaining <= 0 && remainingDeficit > 0;
 
     let monthlyQuotaCents: number;
     if (monthsRemaining <= 1) {
-      monthlyQuotaCents = Math.max(0, amountCents - existingAvailableBeforeMonth);
+      monthlyQuotaCents = remainingDeficit;
     } else {
-      const remainingDeficit = Math.max(0, amountCents - existingAvailableBeforeMonth);
       monthlyQuotaCents = Math.ceil(remainingDeficit / monthsRemaining);
     }
 
     const neededThisMonthCents = Math.max(0, monthlyQuotaCents - assignedCents);
+    const totalFundedTowardsTarget = existingSavedBeforeMonth + assignedCents;
+    const overallNeededCents = Math.max(0, amountCents - totalFundedTowardsTarget);
     const isFunded = assignedCents >= monthlyQuotaCents || overallNeededCents === 0;
-    const progressRatio = Math.min(1, Math.max(0, availableCents / amountCents));
+    const progressRatio = Math.min(1, Math.max(0, totalFundedTowardsTarget / amountCents));
 
     let statusDescription: string;
     if (overallNeededCents === 0) {
@@ -173,9 +181,9 @@ export function evaluateCategoryTarget(
     } else if (isOverdue) {
       statusDescription = `Überfällig: ${formatCurrency(overallNeededCents)} noch fällig`;
     } else if (isFunded) {
-      statusDescription = `Monatsrate erfüllt (${formatCurrency(monthlyQuotaCents)}/Monat)`;
+      statusDescription = `Monatsrate erfüllt (${formatCurrency(monthlyQuotaCents)}/Monat, noch ${monthsRemaining} Mon.)`;
     } else {
-      statusDescription = `${formatCurrency(neededThisMonthCents)} noch nötig (${monthsRemaining} Mon. bis zum Ziel)`;
+      statusDescription = `${formatCurrency(neededThisMonthCents)} noch nötig (noch ${monthsRemaining} Mon. bis zum Ziel)`;
     }
 
     return {
