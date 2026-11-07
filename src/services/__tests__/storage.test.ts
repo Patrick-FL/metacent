@@ -258,5 +258,42 @@ describe('Storage Operations & State Machine', () => {
     // Clean up
     storage.deleteTransaction(tx.id);
   });
+
+  it('copies assigned amounts from previous month in bulk with 1-click undo', () => {
+    // Set up source month (2026-10) with assigned values
+    storage.setAssigned('2026-10', 'cat-lebensmittel', 30000); // 300,00 €
+    storage.setAssigned('2026-10', 'cat-miete', 50000); // 500,00 €
+
+    // Ensure target month (2026-11) is 0
+    storage.setAssigned('2026-11', 'cat-lebensmittel', 0);
+    storage.setAssigned('2026-11', 'cat-miete', 0);
+
+    // Copy from 2026-10 to 2026-11
+    const result = storage.copyAssignedFromMonth('2026-10', '2026-11');
+    expect(result.count).toBe(2);
+    expect(result.totalCents).toBe(80000);
+
+    // Verify 2026-11 now has the copied values
+    expect(storage.getMonthlyRollup('2026-11', 'cat-lebensmittel').assignedCents).toBe(30000);
+    expect(storage.getMonthlyRollup('2026-11', 'cat-miete').assignedCents).toBe(50000);
+
+    // Verify Undo works with a single step for all categories
+    storage.undo();
+    expect(storage.getMonthlyRollup('2026-11', 'cat-lebensmittel').assignedCents).toBe(0);
+    expect(storage.getMonthlyRollup('2026-11', 'cat-miete').assignedCents).toBe(0);
+  });
+
+  it('copies assigned amount for a single specific category', () => {
+    storage.setAssigned('2026-10', 'cat-lebensmittel', 35000); // 350,00 €
+    storage.setAssigned('2026-11', 'cat-lebensmittel', 0);
+
+    const copied = storage.copyAssignedForCategory('2026-10', '2026-11', 'cat-lebensmittel');
+    expect(copied).toBe(35000);
+    expect(storage.getMonthlyRollup('2026-11', 'cat-lebensmittel').assignedCents).toBe(35000);
+
+    // Undo reverts this category
+    storage.undo();
+    expect(storage.getMonthlyRollup('2026-11', 'cat-lebensmittel').assignedCents).toBe(0);
+  });
 });
 

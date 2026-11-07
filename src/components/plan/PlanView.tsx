@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Category, TargetType } from '../../types';
 import { calculateBudgetMonth } from '../../services/calculations';
+import { evaluateCategoryTarget } from '../../services/targetCalculations';
 import { formatCurrency, parseCurrencyInput } from '../../services/currency';
 import { storage } from '../../services/storage';
 import { AddCategoryModal } from './AddCategoryModal';
 import { AddGroupModal } from './AddGroupModal';
+import { CopyPreviousMonthModal } from './CopyPreviousMonthModal';
 import {
   ChevronLeft,
   ChevronRight,
@@ -21,6 +23,7 @@ import {
   Check,
   X,
   Layers,
+  Copy,
 } from 'lucide-react';
 
 interface PlanViewProps {
@@ -45,6 +48,18 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
   // Modals
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
   const [addCatGroupId, setAddCatGroupId] = useState<string | null>(null);
+  const [isCopyPreviousMonthOpen, setIsCopyPreviousMonthOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Compute previous month (YYYY-MM)
+  const [currYearStr, currMonthStr] = selectedMonth.split('-');
+  let prevYear = parseInt(currYearStr, 10);
+  let prevMonthNum = parseInt(currMonthStr, 10) - 1;
+  if (prevMonthNum < 1) {
+    prevMonthNum = 12;
+    prevYear -= 1;
+  }
+  const previousMonth = `${prevYear}-${prevMonthNum.toString().padStart(2, '0')}`;
 
   const groups = storage.getCategoryGroups();
   const categories = storage.getCategories();
@@ -53,6 +68,24 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
   const calc = calculateBudgetMonth(selectedMonth);
 
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
+  const selectedRollup = selectedCategory
+    ? storage.getMonthlyRollup(selectedMonth, selectedCategory.id)
+    : null;
+  const previousMonthRollup = selectedCategory
+    ? storage.getMonthlyRollup(previousMonth, selectedCategory.id)
+    : null;
+  const selectedAvailable = selectedCategory
+    ? calc.categoryAvailableMap[selectedCategory.id] ?? 0
+    : 0;
+  const selectedCategoryTargetEval = selectedCategory?.target
+    ? evaluateCategoryTarget(
+        selectedCategory.target,
+        selectedRollup?.assignedCents ?? 0,
+        selectedAvailable,
+        selectedMonth
+      )
+    : null;
+
   const categoryTransactions = selectedCategory
     ? allTransactions
         .filter((tx) => tx.categoryId === selectedCategory.id)
@@ -75,6 +108,13 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
       }
     }
   }, [selectedCategory?.id]);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   const handleStartRenameCategory = () => {
     if (selectedCategory) {
@@ -275,13 +315,24 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
           )}
         </div>
 
-        <button
-          onClick={() => setIsAddGroupOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#232e26] hover:border-[#adebb3]/40 rounded-md text-[#8c9e91] hover:text-[#f1f5f2] transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Kategoriegruppe</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsCopyPreviousMonthOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#232e26] hover:border-[#adebb3]/40 hover:text-[#adebb3] rounded-md text-[#8c9e91] transition-colors"
+            title={`Zuweisungen aus ${formatMonthTitle(previousMonth)} übernehmen`}
+          >
+            <Copy className="w-3.5 h-3.5" />
+            <span>Vormonat übernehmen</span>
+          </button>
+
+          <button
+            onClick={() => setIsAddGroupOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#232e26] hover:border-[#adebb3]/40 rounded-md text-[#8c9e91] hover:text-[#f1f5f2] transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Kategoriegruppe</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Budget Grid + Right Inspector */}
@@ -338,9 +389,11 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                       const isSelected = selectedCategoryId === category.id;
                       const isEditing = editingCategoryId === category.id;
                       const target = category.target;
-
-                      const isTargetFunded = target ? available >= target.amountCents : false;
-                      const targetNeeded = target ? Math.max(0, target.amountCents - available) : 0;
+                      const targetEval = target
+                        ? evaluateCategoryTarget(target, rollup.assignedCents, available, selectedMonth)
+                        : null;
+                      const isTargetFunded = targetEval ? targetEval.isFunded : false;
+                      const targetNeeded = targetEval ? targetEval.neededThisMonthCents : 0;
 
                       return (
                         <tr
@@ -371,10 +424,10 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                           >
                             <div className="flex items-center gap-2">
                               <span>{category.name}</span>
-                              {target && !isTargetFunded && (
+                              {target && targetEval && !isTargetFunded && (
                                 <span
                                   className="text-[10px] text-[#f3d279] flex items-center gap-1 font-normal"
-                                  title={`${formatCurrency(targetNeeded)} diesen Monat noch benötigt`}
+                                  title={targetEval.statusDescription}
                                 >
                                   <Clock className="w-3 h-3" />
                                   <span>{formatCurrency(targetNeeded)} noch nötig</span>
@@ -417,12 +470,12 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                           <td className="py-2.5 px-6 text-right">
                             <span
                               className={`inline-block px-2.5 py-0.5 rounded-full font-mono font-medium tabular-nums text-[11px] ${
-                                isTargetFunded
+                                available < 0
+                                  ? 'bg-[#e8706d]/15 text-[#e8706d] border border-[#e8706d]/30'
+                                  : isTargetFunded
                                   ? 'bg-[#adebb3] text-[#0d110e] font-bold'
                                   : available > 0
                                   ? 'bg-[#adebb3]/15 text-[#adebb3] border border-[#adebb3]/30'
-                                  : available < 0
-                                  ? 'bg-[#e8706d]/15 text-[#e8706d] border border-[#e8706d]/30'
                                   : 'text-[#8c9e91]'
                               }`}
                             >
@@ -513,6 +566,35 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                   </span>
                   <span>auf Konten verknüpft</span>
                 </div>
+
+                {/* Previous Month Quick Copy for Single Category */}
+                {previousMonthRollup && previousMonthRollup.assignedCents > 0 && (
+                  <div className="mt-3 bg-[#141a16] border border-[#232e26] rounded-xl p-3 flex items-center justify-between text-xs">
+                    <div>
+                      <div className="text-[10px] text-[#8c9e91] uppercase tracking-wider">
+                        Vormonat ({formatMonthTitle(previousMonth)})
+                      </div>
+                      <div className="font-mono font-medium text-[#f1f5f2] mt-0.5">
+                        {formatCurrency(previousMonthRollup.assignedCents)} zugewiesen
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        storage.copyAssignedForCategory(previousMonth, selectedMonth, selectedCategory.id);
+                        onUpdate();
+                        setToastMessage(
+                          `${formatCurrency(previousMonthRollup.assignedCents)} aus ${formatMonthTitle(previousMonth)} für „${selectedCategory.name}“ übernommen`
+                        );
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-[#232e26] hover:bg-[#adebb3] text-[#8c9e91] hover:text-[#0d110e] hover:font-bold rounded text-xs transition-colors"
+                      title={`${formatCurrency(previousMonthRollup.assignedCents)} in ${formatMonthTitle(selectedMonth)} übertragen`}
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Übernehmen</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Target Configuration Card */}
@@ -532,6 +614,47 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                     </button>
                   )}
                 </div>
+
+                {selectedCategory.target && selectedCategoryTargetEval && (
+                  <div className="bg-[#0d110e] border border-[#232e26] rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-[#8c9e91]">Status</span>
+                      <span
+                        className={`font-medium ${
+                          selectedCategoryTargetEval.isFunded
+                            ? 'text-[#adebb3]'
+                            : selectedCategoryTargetEval.isOverdue
+                            ? 'text-[#e8706d]'
+                            : 'text-[#f3d279]'
+                        }`}
+                      >
+                        {selectedCategoryTargetEval.statusDescription}
+                      </span>
+                    </div>
+
+                    <div className="w-full bg-[#141a16] h-1.5 rounded-full overflow-hidden border border-[#232e26]">
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          selectedCategoryTargetEval.isFunded
+                            ? 'bg-[#adebb3]'
+                            : selectedCategoryTargetEval.isOverdue
+                            ? 'bg-[#e8706d]'
+                            : 'bg-[#f3d279]'
+                        }`}
+                        style={{
+                          width: `${Math.min(100, Math.round(selectedCategoryTargetEval.progressRatio * 100))}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-[#8c9e91] font-mono">
+                      <span>
+                        Soll {formatMonthTitle(selectedMonth)}: {formatCurrency(selectedCategoryTargetEval.monthlyQuotaCents)}
+                      </span>
+                      <span>{Math.round(selectedCategoryTargetEval.progressRatio * 100)} %</span>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-[11px] text-[#8c9e91] mb-1">Rhythmus</label>
@@ -653,6 +776,30 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
           onClose={() => setAddCatGroupId(null)}
           onSuccess={onUpdate}
         />
+      )}
+
+      <CopyPreviousMonthModal
+        isOpen={isCopyPreviousMonthOpen}
+        currentMonth={selectedMonth}
+        onClose={() => setIsCopyPreviousMonthOpen(false)}
+        onSuccess={(msg) => {
+          onUpdate();
+          if (msg) setToastMessage(msg);
+        }}
+      />
+
+      {/* Floating Action Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#141a16] border border-[#adebb3] text-[#adebb3] px-4 py-2.5 rounded-lg text-xs font-medium shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <Check className="w-4 h-4 text-[#adebb3]" />
+          <span>{toastMessage}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-[#8c9e91] hover:text-[#f1f5f2] ml-2 p-0.5"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );

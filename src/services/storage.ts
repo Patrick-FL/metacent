@@ -361,6 +361,68 @@ class StorageService {
     this.save();
   }
 
+  public copyAssignedFromMonth(
+    sourceMonth: string,
+    targetMonth: string,
+    options: { overwriteExisting?: boolean } = { overwriteExisting: true }
+  ): { count: number; totalCents: number } {
+    this.snapshotForUndo();
+    const categories = this.getCategories();
+    let count = 0;
+    let totalCents = 0;
+
+    for (const cat of categories) {
+      const prevRollup = this.getMonthlyRollup(sourceMonth, cat.id);
+      if (prevRollup.assignedCents > 0) {
+        const targetRollup = this.getMonthlyRollup(targetMonth, cat.id);
+        if (options.overwriteExisting || targetRollup.assignedCents === 0) {
+          const targetKey = `${targetMonth}:${cat.id}`;
+          if (!this.data.rollups[targetKey]) {
+            this.data.rollups[targetKey] = {
+              budgetId: this.data.budget.id,
+              month: targetMonth,
+              categoryId: cat.id,
+              assignedCents: 0,
+              activityCents: 0,
+              note: '',
+              availableCents: 0,
+            };
+          }
+          this.data.rollups[targetKey].assignedCents = prevRollup.assignedCents;
+          count++;
+          totalCents += prevRollup.assignedCents;
+        }
+      }
+    }
+
+    this.save();
+    return { count, totalCents };
+  }
+
+  public copyAssignedForCategory(
+    sourceMonth: string,
+    targetMonth: string,
+    categoryId: string
+  ): number {
+    this.snapshotForUndo();
+    const prevRollup = this.getMonthlyRollup(sourceMonth, categoryId);
+    const targetKey = `${targetMonth}:${categoryId}`;
+    if (!this.data.rollups[targetKey]) {
+      this.data.rollups[targetKey] = {
+        budgetId: this.data.budget.id,
+        month: targetMonth,
+        categoryId,
+        assignedCents: 0,
+        activityCents: 0,
+        note: '',
+        availableCents: 0,
+      };
+    }
+    this.data.rollups[targetKey].assignedCents = prevRollup.assignedCents;
+    this.save();
+    return prevRollup.assignedCents;
+  }
+
   public getMonthlyRollup(month: string, categoryId: string): MonthlyCategoryRollup {
     const key = `${month}:${categoryId}`;
     if (this.data.rollups[key]) {
