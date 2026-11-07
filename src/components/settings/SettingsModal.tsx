@@ -416,10 +416,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <span className="text-[var(--nothing-muted)] uppercase">Autor</span>
                   <span className="text-[var(--nothing-text)] font-bold">Patrick Flöß</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
-                  <span className="text-[var(--nothing-muted)] uppercase">Design Language</span>
-                  <span className="text-[var(--nothing-text)] font-bold">Nothing OS Desktop (Swiss Minimalist)</span>
-                </div>
                 <div className="flex justify-between py-1">
                   <span className="text-[var(--nothing-muted)] uppercase">Speicherung</span>
                   <span className="text-[var(--nothing-text)]">100% Offline (SQLite / Local Engine)</span>
