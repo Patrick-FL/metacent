@@ -406,23 +406,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-4 rounded-2xl space-y-2">
                 <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
                   <span className="text-[var(--nothing-muted)] uppercase">Anwendung</span>
-                  <span className="text-[var(--nothing-text)] font-bold">METACENT // 3.0</span>
+                  <span className="text-[var(--nothing-text)] font-bold">METACENT</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
+                  <span className="text-[var(--nothing-muted)] uppercase">Version</span>
+                  <span className="text-[var(--nothing-text)] font-bold">1.0</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
+                  <span className="text-[var(--nothing-muted)] uppercase">Autor</span>
+                  <span className="text-[var(--nothing-text)] font-bold">Patrick Flöß</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
                   <span className="text-[var(--nothing-muted)] uppercase">Design Language</span>
                   <span className="text-[var(--nothing-text)] font-bold">Nothing OS Desktop (Swiss Minimalist)</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
-                  <span className="text-[var(--nothing-muted)] uppercase">Währung</span>
-                  <span className="text-[var(--nothing-text)]">EUR (€) Minor Integer Cents (i64)</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[var(--nothing-border)]">
+                <div className="flex justify-between py-1">
                   <span className="text-[var(--nothing-muted)] uppercase">Speicherung</span>
                   <span className="text-[var(--nothing-text)]">100% Offline (SQLite / Local Engine)</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-[var(--nothing-muted)] uppercase">Drop Shadows</span>
-                  <span className="text-[#D71921] font-bold">STRICTLY NONE</span>
                 </div>
               </div>
             </div>
@@ -448,8 +448,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         )}
 
         {/* Footer Actions */}
-        <div className="pt-4 border-t border-[var(--nothing-border)] mt-4 flex justify-between items-center text-xs">
-          <span className="font-mono text-[10px] text-[var(--nothing-muted)] uppercase tracking-wider">Lokale Speicherung</span>
+        <div className="pt-4 border-t border-[var(--nothing-border)] mt-4 flex justify-end items-center text-xs">
           <div className="flex items-center gap-2">
             <button
               type="button"

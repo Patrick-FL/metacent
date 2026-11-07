@@ -148,13 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="p-3 border-t border-[var(--nothing-border)] flex items-center justify-between">
-        <div className="flex items-center gap-2 px-2.5 py-1 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)]">
-          <div className="w-1.5 h-1.5 rounded-full bg-[var(--nothing-sage)]" />
-          <span className="font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)] font-medium">
-            Lokal (Offline)
-          </span>
-        </div>
+      <div className="p-3 border-t border-[var(--nothing-border)] flex items-center justify-end">
         <button
           type="button"
           onClick={onOpenSettings}

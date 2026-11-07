@@ -15,10 +15,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ onOpenShortcuts }) => {
       <div className="flex items-center space-x-2.5">
         <div className="w-2 h-2 rounded-full bg-[#D71921] animate-pulse" />
         <span className="font-mono text-xs uppercase tracking-widest text-[var(--nothing-text)] font-semibold">
-          METACENT // SYSTEM 3.0
-        </span>
-        <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">
-          LOCAL OFFLINE
+          METACENT // 1.0
         </span>
       </div>
 
