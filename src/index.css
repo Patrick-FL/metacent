@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mint-50: #f2fbf4;
+  --color-mint-100: #e3f7e7;
+  --color-mint-200: #c5f0cc;
+  --color-mint-300: #adebb3;
+  --color-mint-400: #7fd989;
+  --color-mint-500: #54be60;
+  --color-mint-600: #3ea049;
+  --color-mint-700: #337d3b;
+  --color-mint-800: #2c6332;
+  --color-mint-900: #1a4023;
+  --color-mint-950: #0f2414;
+
+  --color-app-dark: #0d110e;
+  --color-surface-dark: #141a16;
+  --color-sidebar-dark: #0a0d0b;
+  --color-border-dark: #232e26;
+  --color-text-dark: #f1f5f2;
+  --color-muted-dark: #8c9e91;
+}
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #0d110e;
+  color: #f1f5f2;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure tabular numerals for currency & ledger values */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+

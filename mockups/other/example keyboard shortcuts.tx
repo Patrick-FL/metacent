@@ -1,0 +1,126 @@
+
+Keyboard Shortcuts
+Universal
+
+    Open Keyboard Shortcuts Help
+    ?
+    Expand/Collapse Sidebar
+    shift
+    .
+    Select All
+    ctrl
+    A
+    Deselect All
+    escape
+    Math operations
+    +
+    -
+    x
+    /
+    Undo
+    ctrl
+    Z
+    Redo
+    ctrl
+    shift
+    Z
+
+Plan Actions
+
+    Snooze target
+    shift
+    Z
+    Collapse/expand groups
+    ctrl
+    ↑/↓
+    Move between plan rows
+    ↑/↓
+    Select multiple categories
+    shift
+    ↑/↓
+
+Account Actions
+
+    Add new transaction
+    shift
+    N
+    Approve
+    A
+    Approve all transactions
+    shift
+    L
+    Reject
+    shift
+    R
+    Categorize
+    K
+    Split
+    S
+    Enter Now
+    E
+    Match
+    M
+    Unmatch
+    shift
+    U
+    Toggle cleared state
+    C
+    Duplicate
+    shift
+    D
+    Flag
+    shift
+    F
+    then
+    0‑6
+    Make repeating
+    shift
+    T
+    Delete
+    delete
+    Reconcile
+    shift
+    E
+    Focus on the search bar
+    ctrl
+    shift
+    F
+    Select a group of transactions
+    shift
+    click
+    Select multiple transactions
+    shift
+    ↑/↓
+    Move between transactions
+    ↑/↓
+    Move to next transaction field
+    tab
+    Move to previous transaction field
+    shift
+    tab
+
+Date Picker
+
+    Navigate the date picker
+    ↑
+    ↓
+    ←
+    →
+    Move date one day forward
+    +
+    Move date one day backward
+    -
+    Select today
+    T
+    Select first day of month
+    M
+    Select last day of month
+    shift
+    M
+    Select first day of year
+    Y
+    Select last day of year
+    shift
+    Y
+
+
