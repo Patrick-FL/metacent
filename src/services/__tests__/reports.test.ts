@@ -12,6 +12,7 @@ describe('Reports & Reflect Analytics Calculations', () => {
 
   beforeEach(() => {
     // Clean state before tests
+    storage.resetToDemoData();
   });
 
   it('Scenario 1: calculates spending breakdown accurately by category', () => {

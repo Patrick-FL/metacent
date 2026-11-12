@@ -43,6 +43,7 @@ Calculations update with sub-millisecond latency even across databases with deca
    - Hierarchical list of collapsible groups (Standard: `Fixkosten & Rechnungen`, `Bedarfe`, `Wünsche`).
    - **No emoji icons**: Categories display pure, clean typographic labels (e.g., `Miete / Hypothek`, `Telefon & Internet`, `Lebensmittel`).
    - **Kategorie-Details & Umbenennen**: Selecting a category opens the inspector on the right with inline renaming (via button or double-click), propagating the updated name dynamically to all linked account transactions and registers.
+   - **Kategorie-Notizen & Beschreibung**: Jede Kategorie besitzt ein Notizfeld zur detaillierten Beschreibung (z.B. welche Ausgaben hineingehören, Verträge, Richtlinien). Notizen können im Inspektor-Panel („Notizen“) erfasst, bearbeitet und eingesehen werden. Bei der Neuerstellung einer Kategorie kann optional bereits eine Notiz hinterlegt werden. Zusätzlich können monatsspezifische Notizen im Rollup hinterlegt werden. In der Planungstabelle signalisiert ein dezentes Notiz-Icon vorhandene Beschreibungen per Tooltip.
    - Table columns:
      - **Kategorie** (Name)
      - **Zugewiesen** (Assigned budget amount)

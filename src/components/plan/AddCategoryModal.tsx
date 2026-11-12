@@ -18,6 +18,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   onSuccess,
 }) => {
   const [categoryName, setCategoryName] = useState('');
+  const [categoryNotes, setCategoryNotes] = useState('');
 
   if (!isOpen) return null;
 
@@ -25,8 +26,9 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     e.preventDefault();
     if (!categoryName.trim()) return;
 
-    storage.addCategory(groupId, categoryName.trim());
+    storage.addCategory(groupId, categoryName.trim(), categoryNotes.trim());
     setCategoryName('');
+    setCategoryNotes('');
     onSuccess();
     onClose();
   };
@@ -63,6 +65,19 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
               className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1.5">
+              Notiz / Beschreibung (Optional)
+            </label>
+            <textarea
+              rows={2}
+              placeholder="z.B. Was gehört hier rein, Verträge, Abbuchungstage..."
+              value={categoryNotes}
+              onChange={(e) => setCategoryNotes(e.target.value)}
+              className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] focus:outline-none resize-none leading-relaxed font-sans"
             />
           </div>
 

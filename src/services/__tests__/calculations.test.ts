@@ -1,8 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { calculateBudgetMonth } from '../calculations';
 import { storage } from '../storage';
 
 describe('Budget Calculations & Invariants', () => {
+  beforeEach(() => {
+    storage.resetToDemoData();
+  });
   it('correctly calculates initial Ready to Assign from starting cash balance', () => {
     const calc = calculateBudgetMonth('2026-11');
     // Default mock setup starts with 800,00 € cash
@@ -51,6 +54,15 @@ describe('Budget Calculations & Invariants', () => {
     storage.setAssigned('2026-09', 'cat-lebensmittel', 0);
     storage.setAssigned('2026-10', 'cat-lebensmittel', 0);
     storage.setAssigned('2026-11', 'cat-lebensmittel', 0);
+  });
+
+  it('correctly calculates ready to assign as 0,00 € in empty production mode', () => {
+    storage.resetToEmptyProductionData();
+    const calc = calculateBudgetMonth('2026-11');
+    expect(calc.readyToAssignCents).toBe(0);
+    expect(calc.totalAssignedCents).toBe(0);
+    expect(calc.totalActivityCents).toBe(0);
+    expect(calc.totalAvailableCents).toBe(0);
   });
 });
 

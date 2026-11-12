@@ -25,6 +25,7 @@ import {
   Layers,
   Copy,
   BarChart2,
+  FileText,
 } from 'lucide-react';
 
 interface PlanViewProps {
@@ -45,6 +46,11 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
   // Category renaming state
   const [isEditingCategoryName, setIsEditingCategoryName] = useState(false);
   const [categoryNameInput, setCategoryNameInput] = useState('');
+
+  // Category notes state
+  const [activeNoteTab, setActiveNoteTab] = useState<'category' | 'month'>('category');
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesInput, setNotesInput] = useState('');
 
   // 6-Month history state
   const [hoveredHistoryMonth, setHoveredHistoryMonth] = useState<string | null>(null);
@@ -71,7 +77,10 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
   const allTransactions = storage.getTransactions();
   const calc = calculateBudgetMonth(selectedMonth);
 
-  const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
+  const selectedCategory =
+    (selectedCategoryId ? categories.find((c) => c.id === selectedCategoryId) : null) ||
+    categories[0] ||
+    null;
   const selectedRollup = selectedCategory
     ? storage.getMonthlyRollup(selectedMonth, selectedCategory.id)
     : null;
@@ -166,6 +175,13 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
     if (selectedCategory) {
       setCategoryNameInput(selectedCategory.name);
       setIsEditingCategoryName(false);
+      setIsEditingNotes(false);
+      if (activeNoteTab === 'category') {
+        setNotesInput(selectedCategory.notes || '');
+      } else {
+        const rollup = storage.getMonthlyRollup(selectedMonth, selectedCategory.id);
+        setNotesInput(rollup.note || '');
+      }
       if (selectedCategory.target) {
         setTargetAmountStr((selectedCategory.target.amountCents / 100).toFixed(2).replace('.', ','));
         setTargetType(selectedCategory.target.targetType);
@@ -176,7 +192,7 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
         setTargetDueDate('');
       }
     }
-  }, [selectedCategory?.id]);
+  }, [selectedCategory?.id, selectedMonth, activeNoteTab]);
 
   useEffect(() => {
     if (toastMessage) {
@@ -210,6 +226,39 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
       setCategoryNameInput(selectedCategory.name);
     }
     setIsEditingCategoryName(false);
+  };
+
+  const handleStartEditNotes = () => {
+    if (!selectedCategory) return;
+    if (activeNoteTab === 'category') {
+      setNotesInput(selectedCategory.notes || '');
+    } else {
+      setNotesInput(selectedRollup?.note || '');
+    }
+    setIsEditingNotes(true);
+  };
+
+  const handleSaveNotes = () => {
+    if (!selectedCategory) return;
+    const trimmed = notesInput.trim();
+    if (activeNoteTab === 'category') {
+      storage.updateCategoryNotes(selectedCategory.id, trimmed);
+      setToastMessage(`Notiz für „${selectedCategory.name}“ gespeichert`);
+    } else {
+      storage.setCategoryMonthNote(selectedMonth, selectedCategory.id, trimmed);
+      setToastMessage(`Monatsnotiz für ${formatMonthTitle(selectedMonth)} gespeichert`);
+    }
+    setIsEditingNotes(false);
+    onUpdate();
+  };
+
+  const handleCancelEditNotes = () => {
+    setIsEditingNotes(false);
+    if (activeNoteTab === 'category') {
+      setNotesInput(selectedCategory?.notes || '');
+    } else {
+      setNotesInput(selectedRollup?.note || '');
+    }
   };
 
   const handleStartEdit = (category: Category) => {
@@ -429,6 +478,19 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
       <div className="flex-1 flex overflow-hidden">
         {/* Table Area */}
         <div className="flex-1 overflow-y-auto bg-[var(--nothing-surface)]">
+          {accounts.length === 0 && (
+            <div className="m-4 p-3.5 rounded-2xl border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] flex items-center justify-between text-xs select-none">
+              <div className="flex items-center gap-2.5">
+                <div className="w-2 h-2 rounded-full bg-[var(--nothing-sage)] shrink-0" />
+                <div>
+                  <span className="font-semibold text-[var(--nothing-text)]">Bereit für deine echten Daten:</span>{' '}
+                  <span className="text-[var(--nothing-muted)]">
+                    Erstelle dein erstes Bankkonto oder Bargeld unter „Konten“, um dein Startguthaben einzutragen und Budgets zuzuweisen.
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-[var(--nothing-subsurface)] border-b border-[var(--nothing-border)] font-mono text-xs uppercase tracking-wider text-[var(--nothing-muted)] z-10 font-medium">
               <tr>
@@ -516,6 +578,20 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                           >
                             <div className="flex items-center gap-2">
                               <span>{category.name}</span>
+                              {((category.notes && category.notes.trim().length > 0) || (rollup.note && rollup.note.trim().length > 0)) && (
+                                <span
+                                  className="inline-flex items-center text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] transition-colors p-0.5"
+                                  title={
+                                    category.notes && rollup.note
+                                      ? `Kategorie: ${category.notes}\n\n${formatMonthTitle(selectedMonth)}: ${rollup.note}`
+                                      : category.notes
+                                      ? `Notiz: ${category.notes}`
+                                      : `${formatMonthTitle(selectedMonth)}: ${rollup.note}`
+                                  }
+                                >
+                                  <FileText className="w-3 h-3" />
+                                </span>
+                              )}
                               {target && targetEval && !isTargetFunded && (
                                 <span
                                   className="text-[10px] font-mono text-[var(--nothing-amber)] flex items-center gap-1 font-normal"
@@ -677,6 +753,146 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                       <Copy className="w-3 h-3" />
                       <span>Kopieren</span>
                     </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Category Notes Bento Card */}
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider font-semibold text-[var(--nothing-text)]">
+                    <FileText className="w-3.5 h-3.5 text-[#D71921]" />
+                    <span>Notizen</span>
+                  </div>
+
+                  {/* Segmented Switcher between Category Note and Month Note */}
+                  <div className="flex bg-[var(--nothing-surface)] p-0.5 rounded-full border border-[var(--nothing-border)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveNoteTab('category');
+                        setIsEditingNotes(false);
+                      }}
+                      className={`px-2 py-0.5 rounded-full font-mono text-[9px] uppercase tracking-wider font-semibold transition-colors cursor-pointer ${
+                        activeNoteTab === 'category'
+                          ? 'bg-[#D71921] text-white'
+                          : 'text-[var(--nothing-muted)] hover:text-[var(--nothing-text)]'
+                      }`}
+                      title="Dauerhafte Beschreibung dieser Kategorie"
+                    >
+                      Kategorie
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveNoteTab('month');
+                        setIsEditingNotes(false);
+                      }}
+                      className={`px-2 py-0.5 rounded-full font-mono text-[9px] uppercase tracking-wider font-semibold transition-colors cursor-pointer ${
+                        activeNoteTab === 'month'
+                          ? 'bg-[#D71921] text-white'
+                          : 'text-[var(--nothing-muted)] hover:text-[var(--nothing-text)]'
+                      }`}
+                      title={`Spezifische Notiz für ${formatMonthTitle(selectedMonth)}`}
+                    >
+                      {selectedMonth.split('-')[1]}/{selectedMonth.split('-')[0].slice(2)}
+                    </button>
+                  </div>
+
+                  {!isEditingNotes && (
+                    <button
+                      type="button"
+                      onClick={handleStartEditNotes}
+                      className="font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] hover:text-[var(--nothing-text)] flex items-center gap-1 font-medium transition-colors p-1 rounded hover:bg-[var(--nothing-surface)] cursor-pointer shrink-0"
+                      title="Notiz bearbeiten"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      <span>
+                        {(activeNoteTab === 'category' ? selectedCategory.notes : selectedRollup?.note) ? 'Edit' : 'Neu'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Subtitle explaining current note scope */}
+                <div className="text-[10px] font-mono text-[var(--nothing-muted)] uppercase tracking-wider">
+                  {activeNoteTab === 'category'
+                    ? 'Dauerhafte Beschreibung der Kategorie'
+                    : `Notiz für ${formatMonthTitle(selectedMonth)}`}
+                </div>
+
+                {isEditingNotes ? (
+                  <div className="space-y-2">
+                    <textarea
+                      autoFocus
+                      rows={3}
+                      value={notesInput}
+                      onChange={(e) => setNotesInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                          handleSaveNotes();
+                        } else if (e.key === 'Escape') {
+                          handleCancelEditNotes();
+                        }
+                      }}
+                      placeholder={
+                        activeNoteTab === 'category'
+                          ? 'Beschreibe die Kategorie näher: Welche Ausgaben gehören hierher? Feste Abbuchungen, Regeln oder Verträge...'
+                          : `Spezielle Anmerkung für ${formatMonthTitle(selectedMonth)} (z.B. Einmalzahlung, Erstattung)...`
+                      }
+                      className="w-full bg-[var(--nothing-surface)] border border-[var(--nothing-border)] focus:border-[#D71921] rounded-xl p-2.5 text-xs text-[var(--nothing-text)] focus:outline-none resize-none leading-relaxed transition-colors font-sans"
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[8px] text-[var(--nothing-muted)]">
+                        Strg+Enter: Speichern • Esc: Abbrechen
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleCancelEditNotes}
+                          className="px-2.5 py-1 bg-[var(--nothing-surface)] border border-[var(--nothing-border)] text-[var(--nothing-text)] hover:border-[var(--nothing-border-hover)] rounded-full font-mono text-[10px] uppercase tracking-wider font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                          <span>Abbrechen</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveNotes}
+                          className="px-2.5 py-1 bg-[#D71921] text-white rounded-full font-mono text-[10px] uppercase tracking-wider font-semibold hover:opacity-90 transition-opacity flex items-center gap-1 cursor-pointer"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>Speichern</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (activeNoteTab === 'category' ? selectedCategory.notes : selectedRollup?.note) ? (
+                  <div
+                    onClick={handleStartEditNotes}
+                    className="bg-[var(--nothing-surface)] border border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] rounded-xl p-3 cursor-pointer group transition-colors"
+                    title="Klicken zum Bearbeiten"
+                  >
+                    <p className="text-xs text-[var(--nothing-text)] whitespace-pre-wrap leading-relaxed">
+                      {activeNoteTab === 'category' ? selectedCategory.notes : selectedRollup?.note}
+                    </p>
+                    <div className="mt-2 pt-1.5 border-t border-[var(--nothing-border)]/40 flex items-center justify-end">
+                      <span className="font-mono text-[9px] text-[var(--nothing-muted)] group-hover:text-[var(--nothing-text)] transition-colors flex items-center gap-1">
+                        <Pencil className="w-2.5 h-2.5" />
+                        <span>Bearbeiten</span>
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={handleStartEditNotes}
+                    className="bg-[var(--nothing-surface)]/60 border border-dashed border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] hover:bg-[var(--nothing-surface)] rounded-xl p-3 text-center cursor-pointer transition-all group"
+                    title="Notiz hinzufügen"
+                  >
+                    <p className="font-mono text-[10px] text-[var(--nothing-muted)] group-hover:text-[var(--nothing-text)] transition-colors">
+                      {activeNoteTab === 'category'
+                        ? '+ Keine Notiz vorhanden. Klicken, um Beschreibung zu erfassen.'
+                        : `+ Keine Monatsnotiz für ${formatMonthTitle(selectedMonth)}. Klicken zum Hinzufügen.`}
+                    </p>
                   </div>
                 )}
               </div>

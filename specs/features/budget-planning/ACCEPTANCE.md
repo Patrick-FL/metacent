@@ -69,3 +69,16 @@ THEN the category name is updated immediately in the budget planning table and i
 ```
 
 **Status:** ✅ Passed
+
+### Scenario 6: Erfassen und Bearbeiten von Notizen zu einer Kategorie
+
+```gherkin
+GIVEN eine ausgewählte Kategorie (z.B. "Lebensmittel") in der Monatsplanung
+WHEN der Benutzer im Inspektor-Panel eine Notiz eingibt (z.B. "Supermarkt, Bäcker und Drogerie. Keine Gastronomie.") und speichert
+THEN wird die Notiz der Kategorie dauerhaft hinterlegt und im Inspektor angezeigt
+  AND in der Budgettabelle erscheint ein Notiz-Icon mit Tooltip neben dem Kategorienamen
+  AND in der Kategorie-Auswahl (CategoryCombobox) kann nach Inhalten der Notiz gesucht werden
+  AND Undo (Ctrl+Z) macht die Notiz-Änderung rückgängig
+```
+
+**Status:** ✅ Passed

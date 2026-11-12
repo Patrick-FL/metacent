@@ -71,6 +71,7 @@ impl Database {
                 id TEXT PRIMARY KEY,
                 group_id TEXT NOT NULL REFERENCES category_groups(id),
                 name TEXT NOT NULL,
+                notes TEXT DEFAULT '',
                 is_hidden INTEGER NOT NULL DEFAULT 0,
                 sort_order INTEGER NOT NULL DEFAULT 0
             );

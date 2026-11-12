@@ -84,6 +84,7 @@ Hierarchical budget buckets. **Note: No emojis or colored icons.**
 | `id` | `TEXT PRIMARY KEY` | `String` | UUID v4 |
 | `group_id` | `TEXT NOT NULL REFERENCES category_groups(id)` | `String` | Parent group |
 | `name` | `TEXT NOT NULL` | `String` | e.g. "Miete", "Lebensmittel", "Strom", "ÖPNV" |
+| `notes` | `TEXT DEFAULT ''` | `String` | Category description and notes |
 | `is_hidden` | `INTEGER NOT NULL DEFAULT 0` | `bool` | Soft hide |
 | `sort_order` | `INTEGER NOT NULL DEFAULT 0` | `i32` | Order within group |
 

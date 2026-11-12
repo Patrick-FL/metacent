@@ -105,10 +105,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     reader.readAsText(file);
   };
 
+  const handleStartProductionBudget = () => {
+    if (
+      confirm(
+        'Möchtest du alle Beispielkonten und Testbuchungen entfernen, um mit deinen echten Finanzdaten zu starten?\n\nDeine Kategoriestruktur bleibt als Vorlage erhalten.'
+      )
+    ) {
+      storage.resetToEmptyProductionData();
+      setFeedbackMsg({
+        type: 'success',
+        text: 'Produktions-Budget bereit! Du kannst jetzt deine echten Konten anlegen.',
+      });
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 800);
+    }
+  };
+
   const handleResetDemoData = () => {
     if (confirm('Möchtest du wirklich alle Daten auf die Ausgangs-Demodaten zurücksetzen?')) {
       storage.resetToDemoData();
       setFeedbackMsg({ type: 'success', text: 'Demodaten wurden wiederhergestellt.' });
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 800);
+    }
+  };
+
+  const handleFullReset = () => {
+    if (
+      confirm(
+        'ACHTUNG: Möchtest du wirklich ALLE Daten (inklusive Konten, Buchungen und benutzerdefinierten Kategorien) unwiderruflich löschen?'
+      )
+    ) {
+      storage.clearAllData(false);
+      setFeedbackMsg({
+        type: 'success',
+        text: 'Alle Daten wurden vollständig gelöscht.',
+      });
       setTimeout(() => {
         onSuccess();
         onClose();
@@ -324,18 +360,58 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
 
-              <div className="bg-[var(--nothing-subsurface)] border border-[#D71921]/20 p-4 rounded-2xl space-y-2">
-                <h4 className="font-bold text-[#D71921]">Demodaten zurücksetzen</h4>
-                <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
-                  Löscht alle Buchungen und setzt auf Standard-Demodaten zurück.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResetDemoData}
-                  className="px-3.5 py-1.5 border border-[#D71921] text-[#D71921] hover:bg-[#D71921]/10 rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
-                >
-                  Zurücksetzen
-                </button>
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-4 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-[var(--nothing-text)]">Produktions-Budget (Echtbetrieb)</h4>
+                    <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                      Löscht alle Beispielkonten und Testbuchungen. Die Kategoriestruktur bleibt als praktische Vorlage erhalten.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleStartProductionBudget}
+                    className="px-3.5 py-1.5 bg-[#D71921] text-white hover:opacity-90 rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-opacity cursor-pointer shrink-0 ml-4 shadow-sm"
+                  >
+                    Echtbetrieb starten
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] p-4 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-[var(--nothing-text)]">Demodaten wiederherstellen</h4>
+                    <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                      Lädt die Standard-Demodaten (Girokonto mit 800,00 €) zum Ausprobieren.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResetDemoData}
+                    className="px-3.5 py-1.5 border border-[var(--nothing-border)] text-[var(--nothing-text)] hover:border-[var(--nothing-border-hover)] rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer shrink-0 ml-4"
+                  >
+                    Demodaten laden
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-[var(--nothing-subsurface)] border border-[#D71921]/30 p-4 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-[#D71921]">Vollständiger Reset (Alles leeren)</h4>
+                    <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                      Löscht alle Konten, Buchungen, Gruppen und Kategorien restlos.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFullReset}
+                    className="px-3.5 py-1.5 border border-[#D71921] text-[#D71921] hover:bg-[#D71921]/10 rounded-full font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer shrink-0 ml-4"
+                  >
+                    Alles löschen
+                  </button>
+                </div>
               </div>
             </div>
           )}

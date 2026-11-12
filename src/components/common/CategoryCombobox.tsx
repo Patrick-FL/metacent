@@ -63,7 +63,10 @@ export const CategoryCombobox: React.FC<CategoryComboboxProps> = ({
     );
 
     return categories.filter(
-      (c) => c.name.toLowerCase().includes(q) || matchingGroupIds.has(c.groupId)
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.notes && c.notes.toLowerCase().includes(q)) ||
+        matchingGroupIds.has(c.groupId)
     );
   }, [categories, groups, search]);
 
@@ -155,13 +158,21 @@ export const CategoryCombobox: React.FC<CategoryComboboxProps> = ({
                           key={cat.id}
                           type="button"
                           onClick={() => handleSelect(cat.id)}
-                          className={`w-full flex items-center justify-between px-2.5 py-1 rounded-xl text-left transition-colors cursor-pointer ${
+                          title={cat.notes || undefined}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left transition-colors cursor-pointer ${
                             isSelected
                               ? 'bg-[#D71921]/10 text-[#D71921] font-medium'
                               : 'hover:bg-[var(--nothing-subsurface)] text-[var(--nothing-text)]'
                           }`}
                         >
-                          <span className="truncate">{cat.name}</span>
+                          <div className="flex flex-col min-w-0 pr-2">
+                            <span className="truncate text-xs">{cat.name}</span>
+                            {cat.notes && (
+                              <span className="text-[10px] text-[var(--nothing-muted)] truncate font-normal">
+                                {cat.notes}
+                              </span>
+                            )}
+                          </div>
                           {isSelected && <Check className="w-3 h-3 text-[#D71921] shrink-0 ml-1" />}
                         </button>
                       );

@@ -4,6 +4,7 @@ import { storage } from '../storage';
 describe('Storage Operations & State Machine', () => {
   beforeEach(() => {
     // Ensure fresh baseline
+    storage.resetToDemoData();
   });
 
   it('updates working balance by generating adjustment transaction', () => {
@@ -406,6 +407,104 @@ describe('Storage Operations & State Machine', () => {
 
     // Clean up
     storage.deleteTransactions([tx1.id, tx2.id]);
+  });
+
+  it('manages category notes with undo and redo support', () => {
+    // 1. Create a category with initial notes
+    const cat = storage.addCategory(
+      'grp-bedarfe',
+      'Tiernahrung & Tierarzt',
+      'Ausgaben für Futter, Tierarztbesuche und Medikamente für Katze und Hund'
+    );
+    expect(cat.notes).toBe('Ausgaben für Futter, Tierarztbesuche und Medikamente für Katze und Hund');
+
+    const fetchedCat = storage.getCategories().find((c) => c.id === cat.id);
+    expect(fetchedCat?.notes).toBe('Ausgaben für Futter, Tierarztbesuche und Medikamente für Katze und Hund');
+
+    // 2. Update category notes directly
+    const updated = storage.updateCategoryNotes(
+      cat.id,
+      'Tierarztpraxis Dr. Schmidt, Notfallnummer im Telefonbuch'
+    );
+    expect(updated).toBe(true);
+    expect(storage.getCategories().find((c) => c.id === cat.id)?.notes).toBe(
+      'Tierarztpraxis Dr. Schmidt, Notfallnummer im Telefonbuch'
+    );
+
+    // 3. Test undo restores previous notes
+    storage.undo();
+    expect(storage.getCategories().find((c) => c.id === cat.id)?.notes).toBe(
+      'Ausgaben für Futter, Tierarztbesuche und Medikamente für Katze und Hund'
+    );
+
+    // 4. Test redo re-applies updated notes
+    storage.redo();
+    expect(storage.getCategories().find((c) => c.id === cat.id)?.notes).toBe(
+      'Tierarztpraxis Dr. Schmidt, Notfallnummer im Telefonbuch'
+    );
+
+    // 5. Update via updateCategory
+    storage.updateCategory(cat.id, { notes: 'Nur noch Tierarzt' });
+    expect(storage.getCategories().find((c) => c.id === cat.id)?.notes).toBe('Nur noch Tierarzt');
+
+    // Clean up
+    storage.deleteCategory(cat.id);
+  });
+
+  it('manages monthly category rollups notes with undo and redo', () => {
+    const catId = 'cat-lebensmittel';
+    const month = '2026-11';
+
+    // Set monthly note
+    const success = storage.setCategoryMonthNote(
+      month,
+      catId,
+      'Großeinkauf für Geburtstagsfeier eingeplant (+150 €)'
+    );
+    expect(success).toBe(true);
+
+    const rollup = storage.getMonthlyRollup(month, catId);
+    expect(rollup.note).toBe('Großeinkauf für Geburtstagsfeier eingeplant (+150 €)');
+
+    // Undo reverts note
+    storage.undo();
+    const undoneRollup = storage.getMonthlyRollup(month, catId);
+    expect(undoneRollup.note).toBe('');
+
+    // Redo restores note
+    storage.redo();
+    const redoneRollup = storage.getMonthlyRollup(month, catId);
+    expect(redoneRollup.note).toBe('Großeinkauf für Geburtstagsfeier eingeplant (+150 €)');
+
+    // Clean up
+    storage.setCategoryMonthNote(month, catId, '');
+  });
+
+  it('detects demo data, switches to clean production data, and clears ledger', () => {
+    // Initially in demo data mode
+    expect(storage.isDemoData()).toBe(true);
+    expect(storage.getAccounts().length).toBeGreaterThan(0);
+    expect(storage.getTransactions().length).toBeGreaterThan(0);
+
+    // Switch to empty production data
+    storage.resetToEmptyProductionData();
+    expect(storage.isDemoData()).toBe(false);
+    expect(storage.getAccounts().length).toBe(0);
+    expect(storage.getTransactions().length).toBe(0);
+    // Categories should still exist as useful starter templates
+    expect(storage.getCategories().length).toBeGreaterThan(0);
+    expect(storage.getCategoryGroups().length).toBeGreaterThan(0);
+
+    // Clear all data including categories
+    storage.clearAllData(false);
+    expect(storage.getCategories().length).toBe(0);
+    expect(storage.getCategoryGroups().length).toBe(0);
+
+    // Can reset back to demo data
+    storage.resetToDemoData();
+    expect(storage.isDemoData()).toBe(true);
+    expect(storage.getAccounts().length).toBe(1);
+    expect(storage.getAccounts()[0].id).toBe('acc-giro-1');
   });
 });
 

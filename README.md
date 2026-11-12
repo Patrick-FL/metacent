@@ -80,16 +80,26 @@ npm install
 # Entwicklungsserver starten
 npm run dev
 
-# Tests ausführen (51 Tests in 7 Suiten passing)
+# Tests ausführen (55 Tests in 7 Suiten passing)
 npm test
 
 # Produktions-Build erstellen
 npm run build
+
+# Produktions-Build lokal ausführen & testen
+npm run preview
 ```
 
 Öffnen Sie Ihren Browser unter `http://localhost:1420`.
 
-### 2. Native Desktop-App (Tauri 2)
+### 2. Produktions-Modus & Start mit echten Daten
+
+metacent unterstützt zwei Betriebsmodi:
+- **Echtbetrieb (Produktion)**: Sauberes Budget ohne Testkonten oder Buchungen (0,00 € Bereit zur Zuweisung), strukturierte Kategorievorlagen und vorkonfigurierte Bank-Importprofile. Bereit zum direkten Anlegen Ihrer echten Bankkonten oder zum CSV-Kontoauszug-Import.
+- **Demo-Modus**: Vorkonfiguriertes Testkonto (Girokonto mit 800,00 €) zum Erkunden aller Funktionen.
+- **Umschalten**: Direkt über den Hinweis-Banner am oberen Bildschirmrand (*„Echtes Budget starten (Demodaten entfernen)“*) oder in den Einstellungen unter *„Daten & Backup“*.
+
+### 3. Native Desktop-App (Tauri 2)
 
 #### Linux (Debian / Ubuntu / Linux Mint) Systemvoraussetzungen:
 ```bash

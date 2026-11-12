@@ -59,16 +59,17 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   const [categorySearch, setCategorySearch] = useState('');
   const categoryMenuRef = useRef<HTMLDivElement>(null);
 
+  const categories = storage.getCategories();
+
   // Inline entry state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [payee, setPayee] = useState('');
-  const [categoryId, setCategoryId] = useState<string>('cat-lebensmittel');
+  const [categoryId, setCategoryId] = useState<string>(categories[0]?.id || 'cat-lebensmittel');
   const [memo, setMemo] = useState('');
   const [outflowStr, setOutflowStr] = useState('');
   const [inflowStr, setInflowStr] = useState('');
 
   const transactions = storage.getTransactions(account.id);
-  const categories = storage.getCategories();
 
   // Reset selection on account change
   useEffect(() => {
@@ -877,106 +878,160 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
 
       {/* Virtualized Scroll Area */}
       <div ref={parentRef} className="flex-1 overflow-y-auto bg-[var(--nothing-surface)]">
-        <div
-          style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const tx = filteredTransactions[virtualRow.index];
-            const cat = categories.find((c) => c.id === tx.categoryId);
-            const isNegative = tx.amountCents < 0;
-            const isSelected = selectedTxIds.has(tx.id);
-
-            return (
-              <div
-                key={tx.id}
-                onClick={(e) => handleRowClick(tx.id, e)}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-                className={`grid grid-cols-12 px-6 py-2 text-xs border-b border-[var(--nothing-border)] items-center transition-colors font-mono tabular-nums select-none cursor-pointer ${
-                  isSelected ? 'bg-[var(--nothing-subsurface)] border-l-2 border-l-[#D71921]' : 'hover:bg-[var(--nothing-subsurface)]/50'
-                }`}
-              >
-                <div className="col-span-2 flex items-center gap-2.5 min-w-0">
+        {filteredTransactions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[320px] text-center p-8 select-none">
+            <div className="w-12 h-12 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] flex items-center justify-center mb-3 text-[var(--nothing-muted)]">
+              <Tag className="w-5 h-5" />
+            </div>
+            {isFiltered || searchQuery ? (
+              <>
+                <p className="font-bold text-sm text-[var(--nothing-text)] mb-1">
+                  Keine passenden Buchungen
+                </p>
+                <p className="font-mono text-xs text-[var(--nothing-muted)] mb-4">
+                  Für die aktuellen Such- und Filterkriterien wurden keine Einträge gefunden.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClearAllFilters}
+                  className="px-4 py-1.5 rounded-full border border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] font-mono text-xs uppercase tracking-wider text-[var(--nothing-text)] transition-colors cursor-pointer"
+                >
+                  Filter zurücksetzen
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="font-bold text-sm text-[var(--nothing-text)] mb-1">
+                  Noch keine Buchungen auf diesem Konto
+                </p>
+                <p className="max-w-md font-mono text-xs text-[var(--nothing-muted)] mb-5 leading-relaxed">
+                  Erfasse deine erste Buchung manuell oder importiere einen CSV-Kontoauszug deiner Bank.
+                </p>
+                <div className="flex items-center gap-2.5">
                   <button
                     type="button"
-                    onClick={(e) => handleCheckboxClick(tx.id, e)}
-                    title={isSelected ? 'Auswahl aufheben' : 'Auswählen'}
-                    className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#D71921] border-[#D71921]'
-                        : 'border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] bg-[var(--nothing-surface)]'
-                    }`}
+                    onClick={() => setIsAddingInline(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#D71921] text-white font-mono text-xs uppercase tracking-wider font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-sm"
                   >
-                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Buchung hinzufügen</span>
                   </button>
-                  <span className="text-[var(--nothing-muted)] font-mono truncate">{tx.date}</span>
+                  <button
+                    type="button"
+                    onClick={onOpenFileImport}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-surface)] hover:border-[var(--nothing-border-hover)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>CSV importieren</span>
+                  </button>
                 </div>
-                <span className="col-span-3 font-medium text-[var(--nothing-text)] font-sans truncate flex items-center gap-1.5">
-                  {tx.aiSuggested && (
-                    <span title="KI-Kategorisiert (Ollama)">
-                      <Sparkles className="w-3 h-3 text-[#D71921] shrink-0" />
-                    </span>
-                  )}
-                  <span className="truncate">{tx.payee}</span>
-                </span>
-                <span className="col-span-3 text-[var(--nothing-muted)] font-sans truncate flex items-center gap-1.5">
-                  {(tx.isSplitParent || tx.splitParentId) && (
-                    <span className="text-[9px] bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] text-[var(--nothing-text)] px-1.5 py-0.5 rounded-full font-mono uppercase">
-                      Split
-                    </span>
-                  )}
-                  <span className="truncate">{cat ? cat.name : 'Bereit zur Zuweisung'}</span>
-                </span>
-                <span className="col-span-2 text-right text-[#D71921] font-mono">
-                  {isNegative ? formatCurrency(Math.abs(tx.amountCents)) : ''}
-                </span>
-                <span className="col-span-1 text-right text-[var(--nothing-sage)] font-mono">
-                  {!isNegative ? formatCurrency(tx.amountCents) : ''}
-                </span>
-                <div className="col-span-1 flex items-center justify-center gap-1">
-                  {tx.clearedStatus === 'reconciled' ? (
-                    <span title="Abgestimmt und gesperrt" className="text-[var(--nothing-muted)]">
-                      <Lock className="w-3.5 h-3.5" />
-                    </span>
-                  ) : (
+              </>
+            )}
+          </div>
+        ) : (
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const tx = filteredTransactions[virtualRow.index];
+              const cat = categories.find((c) => c.id === tx.categoryId);
+              const isNegative = tx.amountCents < 0;
+              const isSelected = selectedTxIds.has(tx.id);
+
+              return (
+                <div
+                  key={tx.id}
+                  onClick={(e) => handleRowClick(tx.id, e)}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className={`grid grid-cols-12 px-6 py-2 text-xs border-b border-[var(--nothing-border)] items-center transition-colors font-mono tabular-nums select-none cursor-pointer ${
+                    isSelected ? 'bg-[var(--nothing-subsurface)] border-l-2 border-l-[#D71921]' : 'hover:bg-[var(--nothing-subsurface)]/50'
+                  }`}
+                >
+                  <div className="col-span-2 flex items-center gap-2.5 min-w-0">
                     <button
                       type="button"
-                      onClick={(e) => handleToggleCleared(tx, e)}
-                      title="Status umschalten (C)"
-                      className={`w-5 h-5 rounded-full text-[10px] leading-5 text-center font-mono font-bold transition-colors cursor-pointer ${
-                        tx.clearedStatus === 'cleared'
-                          ? 'bg-[var(--nothing-sage)]/15 text-[var(--nothing-sage)] border border-[var(--nothing-sage)]/30'
-                          : 'border border-[var(--nothing-border)] text-[var(--nothing-muted)] hover:border-[var(--nothing-border-hover)] hover:text-[var(--nothing-text)]'
+                      onClick={(e) => handleCheckboxClick(tx.id, e)}
+                      title={isSelected ? 'Auswahl aufheben' : 'Auswählen'}
+                      className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#D71921] border-[#D71921]'
+                          : 'border-[var(--nothing-border)] hover:border-[var(--nothing-border-hover)] bg-[var(--nothing-surface)]'
                       }`}
                     >
-                      C
+                      {isSelected && <Check className="w-3 h-3 text-white" />}
                     </button>
-                  )}
-                  {isSelected && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteSelected(tx.id, e)}
-                      title="Löschen (Delete)"
-                      className="text-[#D71921] opacity-70 hover:opacity-100 ml-1 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                    <span className="text-[var(--nothing-muted)] font-mono truncate">{tx.date}</span>
+                  </div>
+                  <span className="col-span-3 font-medium text-[var(--nothing-text)] font-sans truncate flex items-center gap-1.5">
+                    {tx.aiSuggested && (
+                      <span title="KI-Kategorisiert (Ollama)">
+                        <Sparkles className="w-3 h-3 text-[#D71921] shrink-0" />
+                      </span>
+                    )}
+                    <span className="truncate">{tx.payee}</span>
+                  </span>
+                  <span className="col-span-3 text-[var(--nothing-muted)] font-sans truncate flex items-center gap-1.5">
+                    {(tx.isSplitParent || tx.splitParentId) && (
+                      <span className="text-[9px] bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] text-[var(--nothing-text)] px-1.5 py-0.5 rounded-full font-mono uppercase">
+                        Split
+                      </span>
+                    )}
+                    <span className="truncate">{cat ? cat.name : 'Bereit zur Zuweisung'}</span>
+                  </span>
+                  <span className="col-span-2 text-right text-[#D71921] font-mono">
+                    {isNegative ? formatCurrency(Math.abs(tx.amountCents)) : ''}
+                  </span>
+                  <span className="col-span-1 text-right text-[var(--nothing-sage)] font-mono">
+                    {!isNegative ? formatCurrency(tx.amountCents) : ''}
+                  </span>
+                  <div className="col-span-1 flex items-center justify-center gap-1">
+                    {tx.clearedStatus === 'reconciled' ? (
+                      <span title="Abgestimmt und gesperrt" className="text-[var(--nothing-muted)]">
+                        <Lock className="w-3.5 h-3.5" />
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleCleared(tx, e)}
+                        title="Status umschalten (C)"
+                        className={`w-5 h-5 rounded-full text-[10px] leading-5 text-center font-mono font-bold transition-colors cursor-pointer ${
+                          tx.clearedStatus === 'cleared'
+                            ? 'bg-[var(--nothing-sage)]/15 text-[var(--nothing-sage)] border border-[var(--nothing-sage)]/30'
+                            : 'border border-[var(--nothing-border)] text-[var(--nothing-muted)] hover:border-[var(--nothing-border-hover)] hover:text-[var(--nothing-text)]'
+                        }`}
+                      >
+                        {tx.clearedStatus === 'cleared' ? 'C' : ''}
+                      </button>
+                    )}
+
+                    {/* Delete action for selected or single */}
+                    {tx.clearedStatus !== 'reconciled' && isSelected && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteSelected(tx.id, e)}
+                        title="Löschen (Delete)"
+                        className="text-[#D71921] opacity-70 hover:opacity-100 ml-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {selectedTx && (

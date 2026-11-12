@@ -22,92 +22,35 @@ interface StorageSchema {
   importProfiles: ImportProfile[];
 }
 
-function getInitialData(): StorageSchema {
-  const now = Date.now();
-  const budgetId = 'budget-main-1';
-
-  const budget: Budget = {
-    id: budgetId,
-    name: 'Hauptbudget',
-    currency: 'EUR',
-    currencySymbol: '€',
-    dateFormat: 'DD.MM.YYYY',
-    language: 'de-DE',
-    settings: {
-      ollamaEndpoint: 'http://localhost:11434',
-      ollamaModel: 'llama3.2:3b',
-      openRouterApiKey: '',
-      negativeBalanceRollover: 'deduct_from_ready_to_assign',
-    },
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const accountId = 'acc-giro-1';
-  const initialAccounts: Account[] = [
-    {
-      id: accountId,
-      budgetId,
-      nickname: 'Girokonto',
-      accountType: 'checking',
-      isFavorite: true,
-      isClosed: false,
-      notes: 'Hauptgirokonto für Gehalt und Fixkosten',
-      sortOrder: 0,
-      lastReconciledAt: null,
-      clearedBalanceCents: 80000, // 800,00 €
-      unclearedBalanceCents: 0,
-      workingBalanceCents: 80000,
-    },
-  ];
-
-  const groups: CategoryGroup[] = [
+function getStandardCategoryGroups(budgetId: string): CategoryGroup[] {
+  return [
     { id: 'grp-fixkosten', budgetId, name: 'Fixkosten & Rechnungen', isCollapsed: false, sortOrder: 0 },
     { id: 'grp-bedarfe', budgetId, name: 'Bedarfe des Alltags', isCollapsed: false, sortOrder: 1 },
     { id: 'grp-wuensche', budgetId, name: 'Wünsche & Freizeit', isCollapsed: false, sortOrder: 2 },
   ];
+}
 
-  const categories: Category[] = [
+function getStandardCategories(): Category[] {
+  return [
     // Fixkosten
-    { id: 'cat-miete', groupId: 'grp-fixkosten', name: 'Miete / Hypothek', isHidden: false, sortOrder: 0 },
-    { id: 'cat-telefon', groupId: 'grp-fixkosten', name: 'Telefon & Internet', isHidden: false, sortOrder: 1 },
-    { id: 'cat-strom', groupId: 'grp-fixkosten', name: 'Strom & Heizung', isHidden: false, sortOrder: 2 },
+    { id: 'cat-miete', groupId: 'grp-fixkosten', name: 'Miete / Hypothek', notes: 'Monatliche Kalt- und Warmmiete sowie Nebenkostenvorauszahlung', isHidden: false, sortOrder: 0 },
+    { id: 'cat-telefon', groupId: 'grp-fixkosten', name: 'Telefon & Internet', notes: 'Mobilfunkverträge und Glasfaser-Heimanschluss', isHidden: false, sortOrder: 1 },
+    { id: 'cat-strom', groupId: 'grp-fixkosten', name: 'Strom & Heizung', notes: 'Monatlicher Abschlag an die Stadtwerke', isHidden: false, sortOrder: 2 },
     // Bedarfe
-    { id: 'cat-lebensmittel', groupId: 'grp-bedarfe', name: 'Lebensmittel', isHidden: false, sortOrder: 0 },
-    { id: 'cat-mobilitaet', groupId: 'grp-bedarfe', name: 'Mobilität & ÖPNV', isHidden: false, sortOrder: 1 },
-    { id: 'cat-gesundheit', groupId: 'grp-bedarfe', name: 'Gesundheit & Körperpflege', isHidden: false, sortOrder: 2 },
-    { id: 'cat-notgroschen', groupId: 'grp-bedarfe', name: 'Notgroschen', isHidden: false, sortOrder: 3 },
+    { id: 'cat-lebensmittel', groupId: 'grp-bedarfe', name: 'Lebensmittel', notes: 'Wocheneinkäufe, Supermarkt, Bäcker und Drogeriebedarf', isHidden: false, sortOrder: 0 },
+    { id: 'cat-mobilitaet', groupId: 'grp-bedarfe', name: 'Mobilität & ÖPNV', notes: 'Deutschlandticket, Tanken und Fahrzeugwartung', isHidden: false, sortOrder: 1 },
+    { id: 'cat-gesundheit', groupId: 'grp-bedarfe', name: 'Gesundheit & Körperpflege', notes: 'Apotheke, Zuzahlungen, Friseur und Pflegeprodukte', isHidden: false, sortOrder: 2 },
+    { id: 'cat-notgroschen', groupId: 'grp-bedarfe', name: 'Notgroschen', notes: 'Rücklage für unerwartete Reparaturen und Notfälle', isHidden: false, sortOrder: 3 },
     // Wünsche
-    { id: 'cat-gastronomie', groupId: 'grp-wuensche', name: 'Gastronomie & Ausgehen', isHidden: false, sortOrder: 0 },
-    { id: 'cat-unterhaltung', groupId: 'grp-wuensche', name: 'Unterhaltung & Streaming', isHidden: false, sortOrder: 1 },
-    { id: 'cat-urlaub', groupId: 'grp-wuensche', name: 'Urlaub & Reisen', isHidden: false, sortOrder: 2 },
-    { id: 'cat-ungeplant', groupId: 'grp-wuensche', name: 'Ungeplante Ausgaben', isHidden: false, sortOrder: 3 },
+    { id: 'cat-gastronomie', groupId: 'grp-wuensche', name: 'Gastronomie & Ausgehen', notes: 'Restaurants, Cafés, Bars und Lieferdienste', isHidden: false, sortOrder: 0 },
+    { id: 'cat-unterhaltung', groupId: 'grp-wuensche', name: 'Unterhaltung & Streaming', notes: 'Streaming-Abos, Kino, Gaming und Konzerte', isHidden: false, sortOrder: 1 },
+    { id: 'cat-urlaub', groupId: 'grp-wuensche', name: 'Urlaub & Reisen', notes: 'Urlaubsreisen, Unterkünfte, Zug- und Flugtickets', isHidden: false, sortOrder: 2 },
+    { id: 'cat-ungeplant', groupId: 'grp-wuensche', name: 'Ungeplante Ausgaben', notes: 'Spontane Ausgaben und Puffer', isHidden: false, sortOrder: 3 },
   ];
+}
 
-  // Initial starting balance transaction: Inflow of 800,00 € to Ready to Assign
-  const today = new Date().toISOString().split('T')[0];
-  const initialTransactions: Transaction[] = [
-    {
-      id: 'tx-init-1',
-      accountId,
-      date: today,
-      payee: 'Anfangssaldo',
-      categoryId: null, // Ready to assign
-      memo: 'Kontoeröffnung',
-      amountCents: 80000,
-      clearedStatus: 'cleared',
-      isApproved: true,
-      flag: 0,
-      transferAccountId: null,
-      transferTransactionId: null,
-      importFitid: null,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
-
-  // Pre-configured CSV import profiles
-  const importProfiles: ImportProfile[] = [
+function getStandardImportProfiles(): ImportProfile[] {
+  return [
     {
       id: 'prof-trade-republic',
       accountId: 'all',
@@ -166,16 +109,113 @@ function getInitialData(): StorageSchema {
       categoryMatchRules: [],
     },
   ];
+}
+
+export function getEmptyProductionData(): StorageSchema {
+  const now = Date.now();
+  const budgetId = 'budget-main-1';
+
+  const budget: Budget = {
+    id: budgetId,
+    name: 'Mein Budget',
+    currency: 'EUR',
+    currencySymbol: '€',
+    dateFormat: 'DD.MM.YYYY',
+    language: 'de-DE',
+    settings: {
+      ollamaEndpoint: 'http://localhost:11434',
+      ollamaModel: 'llama3.2:3b',
+      openRouterApiKey: '',
+      negativeBalanceRollover: 'deduct_from_ready_to_assign',
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return {
+    budget,
+    accounts: [],
+    groups: getStandardCategoryGroups(budgetId),
+    categories: getStandardCategories(),
+    transactions: [],
+    rollups: {},
+    importProfiles: getStandardImportProfiles(),
+  };
+}
+
+export function getDemoData(): StorageSchema {
+  const now = Date.now();
+  const budgetId = 'budget-main-1';
+
+  const budget: Budget = {
+    id: budgetId,
+    name: 'Hauptbudget (Demo)',
+    currency: 'EUR',
+    currencySymbol: '€',
+    dateFormat: 'DD.MM.YYYY',
+    language: 'de-DE',
+    settings: {
+      ollamaEndpoint: 'http://localhost:11434',
+      ollamaModel: 'llama3.2:3b',
+      openRouterApiKey: '',
+      negativeBalanceRollover: 'deduct_from_ready_to_assign',
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const accountId = 'acc-giro-1';
+  const initialAccounts: Account[] = [
+    {
+      id: accountId,
+      budgetId,
+      nickname: 'Girokonto',
+      accountType: 'checking',
+      isFavorite: true,
+      isClosed: false,
+      notes: 'Hauptgirokonto für Gehalt und Fixkosten',
+      sortOrder: 0,
+      lastReconciledAt: null,
+      clearedBalanceCents: 80000, // 800,00 €
+      unclearedBalanceCents: 0,
+      workingBalanceCents: 80000,
+    },
+  ];
+
+  const today = new Date().toISOString().split('T')[0];
+  const initialTransactions: Transaction[] = [
+    {
+      id: 'tx-init-1',
+      accountId,
+      date: today,
+      payee: 'Anfangssaldo',
+      categoryId: null, // Ready to assign
+      memo: 'Kontoeröffnung',
+      amountCents: 80000,
+      clearedStatus: 'cleared',
+      isApproved: true,
+      flag: 0,
+      transferAccountId: null,
+      transferTransactionId: null,
+      importFitid: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
 
   return {
     budget,
     accounts: initialAccounts,
-    groups,
-    categories,
+    groups: getStandardCategoryGroups(budgetId),
+    categories: getStandardCategories(),
     transactions: initialTransactions,
     rollups: {},
-    importProfiles,
+    importProfiles: getStandardImportProfiles(),
   };
+}
+
+function getInitialData(): StorageSchema {
+  return getEmptyProductionData();
 }
 
 class StorageService {
@@ -188,6 +228,11 @@ class StorageService {
     if (raw) {
       try {
         this.data = JSON.parse(raw);
+        if (this.data && Array.isArray(this.data.categories)) {
+          for (const c of this.data.categories) {
+            if (c.notes === undefined) c.notes = '';
+          }
+        }
       } catch {
         this.data = getInitialData();
         this.save();
@@ -793,12 +838,13 @@ class StorageService {
     return true;
   }
 
-  public addCategory(groupId: string, name: string): Category {
+  public addCategory(groupId: string, name: string, notes?: string): Category {
     this.snapshotForUndo();
     const newCat: Category = {
       id: `cat-${Date.now()}`,
       groupId,
       name: name.trim(),
+      notes: notes !== undefined ? notes.trim() : '',
       isHidden: false,
       sortOrder: this.data.categories.length,
     };
@@ -820,6 +866,35 @@ class StorageService {
     return true;
   }
 
+  public updateCategoryNotes(categoryId: string, notes: string): boolean {
+    const cat = this.data.categories.find((c) => c.id === categoryId);
+    if (!cat) return false;
+
+    this.snapshotForUndo();
+    cat.notes = notes.trim();
+    this.save();
+    return true;
+  }
+
+  public setCategoryMonthNote(month: string, categoryId: string, note: string): boolean {
+    const key = `${month}:${categoryId}`;
+    this.snapshotForUndo();
+    if (!this.data.rollups[key]) {
+      this.data.rollups[key] = {
+        budgetId: this.data.budget.id,
+        month,
+        categoryId,
+        assignedCents: 0,
+        activityCents: 0,
+        note: '',
+        availableCents: 0,
+      };
+    }
+    this.data.rollups[key].note = note.trim();
+    this.save();
+    return true;
+  }
+
   public updateCategory(
     categoryId: string,
     updates: Partial<Omit<Category, 'id'>>
@@ -833,6 +908,7 @@ class StorageService {
       if (!trimmed) return false;
       cat.name = trimmed;
     }
+    if (updates.notes !== undefined) cat.notes = updates.notes;
     if (updates.groupId !== undefined) cat.groupId = updates.groupId;
     if (updates.isHidden !== undefined) cat.isHidden = updates.isHidden;
     if (updates.sortOrder !== undefined) cat.sortOrder = updates.sortOrder;
@@ -1092,9 +1168,38 @@ class StorageService {
     }
   }
 
+  public isDemoData(): boolean {
+    return (
+      this.data.accounts.some((a) => a.id === 'acc-giro-1') ||
+      this.data.transactions.some((t) => t.id === 'tx-init-1')
+    );
+  }
+
+  public resetToEmptyProductionData(): void {
+    this.snapshotForUndo();
+    this.data = getEmptyProductionData();
+    this.save();
+    this.undoStack = [];
+    this.redoStack = [];
+  }
+
+  public clearAllData(keepCategories = true): void {
+    this.snapshotForUndo();
+    this.data.accounts = [];
+    this.data.transactions = [];
+    this.data.rollups = {};
+    if (!keepCategories) {
+      this.data.groups = [];
+      this.data.categories = [];
+    }
+    this.save();
+    this.undoStack = [];
+    this.redoStack = [];
+  }
+
   public resetToDemoData(): void {
     this.snapshotForUndo();
-    this.data = getInitialData();
+    this.data = getDemoData();
     this.save();
     this.undoStack = [];
     this.redoStack = [];
