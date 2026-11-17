@@ -1247,3 +1247,175 @@ interface ServiceError {
   details?: unknown;     // additional context
 }
 ```
+
+---
+
+## 8. KI-Finanzberater & Ziel-Copilot API
+
+Commands and queries for AI-driven spending audits, interactive scenario modeling, web price research, and non-patronizing goal prioritization.
+
+### 8.1 Commands
+
+#### `TriggerSpendingAuditCommand`
+Executes an on-demand multi-month spending examination.
+
+```typescript
+interface TriggerSpendingAuditInput {
+  budgetId: EntityId;
+  lookbackMonths?: number; // default: 6
+  excludeProtectedCategories?: boolean; // default: true
+}
+
+interface SpendingAuditResult {
+  auditRunId: EntityId;
+  lookbackPeriod: { start: string; end: string };
+  totalAnalyzedCents: MoneyAmount;
+  identifiedMonthlySavingsCents: MoneyAmount;
+  recommendations: AiRecommendationItem[];
+  objectiveSummary: string;
+}
+```
+
+#### `SimulateGoalScenarioCommand`
+Calculates deterministic impact of proposed savings adjustments on active target dates.
+
+```typescript
+interface SimulateGoalScenarioInput {
+  budgetId: EntityId;
+  targetCategoryId: EntityId;
+  categoryAdjustments: Array<{
+    categoryId: EntityId;
+    monthlyReductionCents: MoneyAmount;
+  }>;
+}
+
+interface GoalScenarioResult {
+  scenarioId: EntityId;
+  targetCategoryId: EntityId;
+  totalMonthlyLeverCents: MoneyAmount;
+  baselineTargetDate: string; // "YYYY-MM"
+  simulatedTargetDate: string; // "YYYY-MM"
+  monthsAccelerated: number;
+  feasibilityScore: number; // 0.0 - 1.0 based on historical floor
+}
+```
+
+#### `ResearchMarketAlternativesCommand`
+Runs privacy-sanitized internet market price comparisons for contracts and planned target purchases.
+
+```typescript
+interface ResearchMarketAlternativesInput {
+  budgetId: EntityId;
+  recommendationId?: EntityId;
+  categoryType: 'mobile_phone' | 'internet_dsl' | 'electricity_gas' | 'insurance' | 'subscription' | 'target_item';
+  baselineMonthlyCostCents?: MoneyAmount;
+  targetItemQuery?: string; // e.g. "E-Bike Pendeln 500Wh"
+}
+
+interface MarketResearchResult {
+  researchId: EntityId;
+  sanitizedQueryExecuted: string;
+  foundAlternatives: Array<{
+    provider: string;
+    productName: string;
+    monthlyPriceCents: MoneyAmount;
+    oneTimeFeeCents: MoneyAmount;
+    annualSavingsCents: MoneyAmount;
+    keyFeatures: string[];
+    officialUrl: string;
+  }>;
+  privacySummary: {
+    personalDataStripped: string[];
+    externalEndpoint: string;
+  };
+}
+```
+
+#### `RefineAndPrioritizeTargetsCommand`
+Translates conversational wishes into structured SMART targets and resolves competing allocations.
+
+```typescript
+interface RefineAndPrioritizeTargetsInput {
+  budgetId: EntityId;
+  targetGoalDraft: {
+    categoryName: string;
+    vagueDescription: string;
+    desiredHorizonMonths?: number;
+    estimatedCostCents?: MoneyAmount;
+  };
+  existingTargetPriorities?: Array<{
+    targetId: EntityId;
+    priorityRank: number; // 1 = highest
+  }>;
+}
+
+interface TargetRefinementResult {
+  structuredTarget: {
+    suggestedCategoryName: string;
+    suggestedTargetType: 'monthly' | 'custom' | 'yearly';
+    targetAmountCents: MoneyAmount;
+    recommendedMonthlySavingsCents: MoneyAmount;
+    dueDate: string; // "YYYY-MM-DD"
+    rationale: string;
+  };
+  impactOnOtherTargets: Array<{
+    targetId: EntityId;
+    categoryName: string;
+    currentMonthlyRateCents: MoneyAmount;
+    adjustedMonthlyRateCents: MoneyAmount;
+    delayedMonths: number;
+  }>;
+}
+```
+
+#### `ApplyRecommendationCommand`
+Applies an accepted savings lever or target modification directly to budget categories and rollups.
+
+```typescript
+interface ApplyRecommendationInput {
+  recommendationId: EntityId;
+  applyMode: 'adjust_target' | 'reduce_next_month_assigned' | 'create_rule';
+}
+```
+
+#### `ToggleCategoryProtectionCommand`
+Flags or unflags a category as "Geschützte Lebensqualität" (exempt from AI cuts).
+
+```typescript
+interface ToggleCategoryProtectionInput {
+  categoryId: EntityId;
+  isProtected: boolean;
+  userReasonNote?: string;
+}
+```
+
+#### `SendAdvisorMessageCommand`
+Sends a message to the empathetic, non-patronizing advisor chat session.
+
+```typescript
+interface SendAdvisorMessageInput {
+  sessionId?: EntityId;
+  budgetId: EntityId;
+  messageText: string;
+}
+
+interface AdvisorMessageResponse {
+  sessionId: EntityId;
+  replyText: string;
+  actionChips?: Array<{
+    label: string;
+    actionCommand: string;
+    payload: unknown;
+  }>;
+  interactiveWidgets?: Array<'slider_simulator' | 'comparison_card' | 'target_preview'>;
+}
+```
+
+### 8.2 Queries
+
+- `GetLatestAuditRun(budgetId: EntityId): SpendingAuditResult | null`
+- `GetActiveRecommendations(budgetId: EntityId, status?: 'pending' | 'accepted' | 'declined'): AiRecommendationItem[]`
+- `GetGoalSimulation(scenarioId: EntityId): GoalScenarioResult`
+- `GetProtectedCategories(budgetId: EntityId): Category[]`
+- `GetAdvisorChatSession(sessionId: EntityId): AiChatSessionWithMessages`
+

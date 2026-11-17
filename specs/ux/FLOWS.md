@@ -360,3 +360,67 @@ flowchart TD
 5. **Verify** → Ready to Assign should still be \$0.00. The overspent category should now be funded (Available ≥ 0).
 
 **Key insight:** This is "rolling with the punches" — the budget adapts to reality without guilt. The important thing is that every dollar still has a job.
+
+---
+
+## Flow 9: KI-Ausgaben-Audit & Interaktive Einspar-Simulation
+
+**Goal:** Uncover recurring spending inefficiencies and interactively test how savings accelerate personal goals.
+
+**Trigger:** User clicks "Ausgaben analysieren" in Plan or navigates to `/advisor`.
+
+```mermaid
+flowchart TD
+    A["Click 'Ausgaben analysieren'"] --> B["Audit engine scans 3-12 months history"]
+    B --> C["Render objective insights & lever cards"]
+    C --> D["User adjusts a savings lever slider (e.g. Gastronomie -40 €)"]
+    D --> E["Deterministic math kernel recalculates target completion"]
+    E --> F["Timeline visualizes acceleration (e.g. '3 Monate früher')"]
+    F --> G{"User satisfies with plan?"}
+    G -->|No, adjust more| D
+    G -->|Yes| H["Click 'In Budget übernehmen'"]
+    H --> I["Update target monthly rate / next month assigned"]
+    I --> J["Zero-based invariant preserved ✓"]
+```
+
+---
+
+## Flow 10: Anonymisierte Web-Preisrecherche & Vertragsalternativen
+
+**Goal:** Compare recurring bills or planned target purchases against live open-market prices without leaking any private banking data.
+
+**Trigger:** User clicks "Markt-Alternativen recherchieren" on an identified contract card.
+
+```mermaid
+flowchart TD
+    A["Click 'Markt-Alternativen recherchieren'"] --> B["Local Privacy Firewall extracts category & segment"]
+    B --> C["Strip all IBANs, names, customer IDs, exact balances"]
+    C --> D["Generate sanitized query (e.g. 'DSL 100 Mbit Flat Deutschland 2026')"]
+    D --> E["Execute web search via privacy gateway"]
+    E --> F["Parse verified offers and filter tracking/affiliates"]
+    F --> G["Display structured Alternative Cards with annual savings"]
+    G --> H["User clicks 'Suchbegriff anzeigen' to verify data privacy"]
+    H --> I["User saves switch reminder or notes"]
+```
+
+---
+
+## Flow 11: Ziel-Konkretisierung (SMART) & Priorisierung
+
+**Goal:** Turn a vague wish into a concrete budget target and resolve funding conflicts among competing goals.
+
+**Trigger:** User messages the Goal Copilot chat or encounters target cashflow constraints.
+
+```mermaid
+flowchart TD
+    A["User enters wish: 'Ich möchte für einen Sommerurlaub sparen'"] --> B["Copilot asks supportive clarifying questions"]
+    B --> C["User provides target amount (1.800 €) and date (Juni 2027)"]
+    C --> D["Copilot validates against monthly unassigned capacity"]
+    D --> E{"Funding capacity sufficient?"}
+    E -->|Yes| F["Render 1-click 'Ziel im Budget anlegen' button"]
+    E -->|No, capacity tight| G["Copilot presents empathetic prioritization choices"]
+    G --> H["User selects: extend deadline or adjust lower-priority target"]
+    H --> F
+    F --> I["Target created with accurate minor-unit monthly rate"]
+```
+

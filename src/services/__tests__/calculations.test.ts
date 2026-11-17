@@ -64,5 +64,28 @@ describe('Budget Calculations & Invariants', () => {
     expect(calc.totalActivityCents).toBe(0);
     expect(calc.totalAvailableCents).toBe(0);
   });
+
+  it('ensures loan starting debt does not affect cash ready-to-assign', () => {
+    const beforeCalc = calculateBudgetMonth('2026-11');
+    const initialReady = beforeCalc.readyToAssignCents;
+
+    // Add installment loan of 8.000 €
+    storage.addAccount(
+      {
+        budgetId: storage.getBudget().id,
+        nickname: 'Sparkasse Ratenkredit',
+        accountType: 'loan',
+        isFavorite: false,
+        isClosed: false,
+        notes: '',
+        sortOrder: 0,
+        lastReconciledAt: null,
+      },
+      -800000
+    );
+
+    const afterCalc = calculateBudgetMonth('2026-11');
+    expect(afterCalc.readyToAssignCents).toBe(initialReady);
+  });
 });
 

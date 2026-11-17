@@ -35,9 +35,30 @@ metacent basiert auf den vier Grundregeln des Zero-Based Budgeting:
 | **Lokale Souveränität & Zero Cloud** | Keine externen Bank-Schnittstellen (Plaid/Finicity/usw.). Alle Konten, Buchungen und Budgets verbleiben verschlüsselt in einer lokalen SQLite-Datenbank auf dem Rechner des Nutzers. |
 | **Native Geschwindigkeit für Millionen Buchungen** | Gebaut mit **Tauri 2.0 (Rust)** und embedded SQLite. Materialisierte monatliche Aggregationstabellen und DOM-Virtualisierung garantieren Reaktionszeiten $<1\text{ms}$ selbst bei 10+ Jahren Historie. |
 | **Lokale KI-Kategorisierung (Ollama)** | Intelligente automatisierte Buchungszuordnung über lokale Small Language Models (z.B. via Ollama `llama3.2:3b`, `qwen2.5:3b`) direkt auf dem Rechner – ohne Datenabfluss ins Netz. |
+| **KI-Finanzberater & Ziel-Copilot** | Partnerschaftliche, nicht-bevormundende KI-Ausgabenanalyse. Ermittelt interaktiv Einsparpotenziale zur schnelleren Zielerreichung, recherchiert anonymisiert aktuelle Markt- und Vergleichspreise im Web und hilft bei der Konkretisierung und Priorisierung persönlicher Sparziele. |
 | **Maßgeschneiderte Importer-Profile** | Speichern individueller Import-Vorlagen pro Konto (z.B. Trade Republic CSV, DKB, Commerzbank) mit automatischer Spalten- und Formaterkennung für 1-Klick-Importe. |
 | **Monochrom & Konzentriert** | Minimalistisches Interface im Nothing OS / Apple-Stil: keine Emojis bei Kategorien, flache monochrome Icons, Mint-Grün als funktionaler Akzent. |
 | **Tastatur-Zentriert** | Durchgängige Bedienbarkeit ohne Maus: Schnellerfassung, Buchungsbestätigung, Navigation und Abstimmen über globale Shortcuts. |
+
+---
+
+## KI-Finanzberater: Partnerschaftliche Intelligenz & Zero-Privacy-Leakage
+
+metacent erweitert die lokale Budgetierung um einen intelligenten, beratenden Finanzbegleiter. Dieser folgt vier ethischen und technischen Grundsätzen:
+
+1. **Beratend und unterstützend, niemals bevormundend**:
+   - Die KI fungiert als wohlwollender Sparringspartner auf Augenhöhe.
+   - Keine moralisierenden Belehrungen, kein Schamgefühl („Du gibst zu viel für Kaffee aus!“).
+   - Ausgaben werden als bewusste Lebensentscheidungen respektiert. Der Nutzer entscheidet jederzeit autonom, welche Kategorien geschützt („Lebensqualität“) und welche zur Optimierung freigegeben sind.
+2. **Zielorientierte Hebelwirkung („Was-wäre-wenn“)**:
+   - Sparen ist kein Selbstzweck, sondern der Weg zu konkreten Wünschen und Zielen.
+   - Die KI verknüpft Einsparungsvorschläge immer direkt mit der Beschleunigung der vom Nutzer gewählten Sparziele (z.B. „Wenn wir hier 35 €/Monat einsparen, erreichst du deine Japan-Reise 2 Monate früher“).
+3. **Anonymisierte Web-Preisrecherche & echte Markt-Alternativen**:
+   - Die KI geht über bloße Haushaltsbuch-Mathematik hinaus und prüft proaktiv Einsparpotenziale im Markt (z.B. Mobilfunktarife, DSL, Strom/Gas, Versicherungen, Refurbished-Hardware für Sparziele).
+   - **Zero-Privacy-Leakage Firewall**: Keine persönlichen Daten (kein Name, keine IBAN, keine exakten Buchungstexte, keine Salden) verlassen das lokale Gerät. Für Web-Suchen werden ausschließlich abstrahierte, anonymisierte Produkt- und Leistungsabfragen generiert.
+4. **SMART-Zielkonkretisierung & Priorisierung**:
+   - Vage Wünsche („Ich brauche mehr Rücklagen“) werden im Dialog in konkrete, messbare und erreichbare Ziele überführt.
+   - Bei Zielkonflikten hilft die KI durch strukturierte Leitfragen, Prioritäten herauszuarbeiten, ohne eigene Werthaltungen aufzudrängen.
 
 ---
 

@@ -67,3 +67,32 @@ Vorberechnete Aggregationstabellen (`monthly_category_rollups`, `monthly_account
 
 ### Ganzzahlige Cent-Beträge / Integer Minor Units
 Alle Währungsbeträge werden in metacent ausnahmslos als `i64`-Ganzzahlen in Cents gespeichert (z.B. `123,45 €` = `12345`). Gleitkomma-Rundungsfehler (Floating-Point Bugs) sind dadurch mathematisch ausgeschlossen.
+
+---
+
+## KI-Finanzberater & Ziel-Copilot Konzepte
+
+### Ausgaben-Audit / Spending Audit
+Eine strukturierte, mehrdimensionale Untersuchung des historischen Buchungs- und Budgetverhaltens. Identifiziert zyklische Fixkosten (Verträge, Abos), schleichende Kostensteigerungen (Inflation Drift), diskretionäre Ausgabenspitzen und Diskrepanzen zu Zielvorgaben über rollierende 3-, 6- und 12-Monatszeiträume.
+
+### Sparhebel / Savings Lever
+Ein konkreter, quantifizierbarer Stellhebel zur Reduktion von Ausgaben in einer bestimmten Kategorie (z.B. Senkung von Gastronomie um 40,00 €/Monat). Sparhebel sind interaktiv justierbar und verknüpft mit der Zielerreichung.
+
+### Szenario-Simulation (Was-wäre-wenn) / What-If Scenario Simulation
+Die verzögerungsfreie Vorausberechnung, wie sich eine Änderung bei einem oder mehreren Sparhebeln auf die Fälligkeitsdaten und Erreichungsgrade aller aktiven Sparziele (Targets) auswirkt. Erfolgt rein lokal und nicht-destruktiv, bis der Nutzer die Übernahme ins Budget bestätigt.
+
+### Privatsphäre-Query-Sanitisierung / Privacy Query Sanitization
+Der technische Firewall-Mechanismus, der vor jeder Web-Recherche persönliche Informationen (wie Nutzernamen, Kontonummern, IBANs, Ortsangaben, exakte Beträge und Buchungsmemos) herausfiltert und in verallgemeinerte Suchbegriffe (z.B. `DSL 100 Mbit Allnet Flat Deutschland Vergleich monatlich kündbar`) transformiert.
+
+### Ziel-Konkretisierung / Goal Refinement (SMART)
+Der strukturierte Dialogprozess, bei dem aus formlosen Absichten („Ich will nächstes Jahr verreisen“) konkrete Budget-Ziele mit Minor-Unit-Zielsummen, Zieldaten und rhythmischen Sparraten nach dem SMART-Prinzip (Specific, Measurable, Achievable, Relevant, Time-bound) abgeleitet werden.
+
+### Ziel-Priorisierung / Goal Prioritization Hierarchy
+Die algorithmisch und dialogisch gestützte Einordnung konkurrierender Sparziele in Dringlichkeits- und Wichtigkeits-Stufen (z.B. Stufe 1: Notgroschen & existenzielle Puffer; Stufe 2: Echte Ausgaben & Sinking Funds; Stufe 3: Zukunftsziele; Stufe 4: Wünsche & Luxus).
+
+### Nicht-bevormundende Persona / Non-Patronizing Advisory Tone
+Die systemisch verankerte Tonalitätsrichtlinie des KI-Agenten: Absolute Sachlichkeit, Empathie und Respekt vor der individuellen Lebensführung. Die KI verwendet niemals imperative oder wertende Formulierungen („Du solltest weniger X kaufen“, „Das ist überflüssig“), sondern bietet neutrale Handlungsoptionen an („Wenn du X um Y anpasst, erreichst du Ziel Z früher. Möchtest du das testen?“).
+
+### Geschützte Lebensqualität / Protected Category
+Ein Flag auf einer Kategorie, das dem KI-Assistenten signalisiert, dass dieser Lebensbereich für den Nutzer unantastbar ist. Die KI schließt geschützte Kategorien automatisch aus allen Kürzungs- und Einsparungsvorschlägen aus.
+

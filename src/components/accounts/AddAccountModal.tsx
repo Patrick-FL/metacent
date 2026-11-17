@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AccountType } from '../../types';
+import { AccountType, isDebtAccountType } from '../../types';
 import { parseCurrencyInput } from '../../services/currency';
 import { storage } from '../../services/storage';
 import { X, Plus } from 'lucide-react';
@@ -21,11 +21,15 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
 
   if (!isOpen) return null;
 
+  const isDebt = isDebtAccountType(accountType);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nickname.trim()) return;
 
-    const initialCents = parseCurrencyInput(balanceStr);
+    const rawCents = parseCurrencyInput(balanceStr);
+    // For loans and debt accounts, positive inputs represent liabilities (negative balance)
+    const initialCents = isDebt && rawCents > 0 ? -rawCents : rawCents;
 
     storage.addAccount(
       {
@@ -73,7 +77,11 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
               type="text"
               required
               autoFocus
-              placeholder="z.B. Trade Republic, DKB Girokonto"
+              placeholder={
+                isDebt
+                  ? 'z. B. ING Ratenkredit, Santander Autokredit'
+                  : 'z. B. DKB Girokonto, Trade Republic'
+              }
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] focus:outline-none"
@@ -107,15 +115,28 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
 
           <div>
             <label className="block font-mono text-[10px] uppercase tracking-wider text-[var(--nothing-muted)] mb-1">
-              Startsaldo (EUR)
+              {isDebt
+                ? accountType === 'loan' || accountType === 'mortgage'
+                  ? 'Aktuelle Restschuld (EUR)'
+                  : 'Aktueller Schuldenstand (EUR)'
+                : 'Startsaldo (EUR)'}
             </label>
             <input
               type="text"
-              placeholder="0,00"
+              placeholder={isDebt ? 'z. B. 5.000,00' : '0,00'}
               value={balanceStr}
               onChange={(e) => setBalanceStr(e.target.value)}
               className="w-full bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] focus:border-[var(--nothing-text)] rounded-xl px-3 py-2 text-xs text-[var(--nothing-text)] font-mono tabular-nums focus:outline-none"
             />
+            {isDebt ? (
+              <p className="mt-1 font-mono text-[10px] text-[var(--nothing-muted)]">
+                Kredite und Verbindlichkeiten werden im Kontobuch automatisch als Verbindlichkeit (Minusbetrag) geführt.
+              </p>
+            ) : (
+              <p className="mt-1 font-mono text-[10px] text-[var(--nothing-muted)]">
+                Guthaben wird als verfügbares Startkapital erfasst.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nothing-border)]">

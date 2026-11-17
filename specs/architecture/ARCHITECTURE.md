@@ -14,6 +14,7 @@ graph TD
         PV["Plan View (Budgeting)"]
         TR["Transaction Register (Virtual Scroll)"]
         RF["Reflect Analytics (5 Tabs)"]
+        ADV["AI Advisor & Goal Studio (/advisor)"]
         IMP["Importer & Template Studio"]
         STATE["TanStack Query + Zustand Client State"]
     end
@@ -27,6 +28,9 @@ graph TD
         SRV["Service Layer & Domain Invariants"]
         CALC["Incremental Rollup Engine"]
         AI["AI Pipeline: Rules -> Ollama -> OpenRouter"]
+        ADVISOR["AI Advisor Orchestrator & Audit Engine"]
+        FIREWALL["Privacy Sanitization Gateway (Zero PII Leakage)"]
+        MATH["Deterministic Goal & Scenario Math Kernel (i64 Cents)"]
         CSV["Parallel CSV / OFX Streaming Parser"]
     end
 
@@ -35,9 +39,10 @@ graph TD
         ROLL["Materialized Monthly Rollups"]
     end
 
-    subgraph EXTERNAL ["Local Daemons"]
+    subgraph EXTERNAL ["Local Daemons & Web"]
         OLL["Local Ollama Daemon (http://localhost:11434)"]
         OR["Optional OpenRouter API (Cloud opt-in)"]
+        SEARCH["Web Search Provider (SearXNG / Brave / Grounding)"]
     end
 
     UI <--> IPC
@@ -45,6 +50,11 @@ graph TD
     RUST <--> STORAGE
     AI <--> OLL
     AI -.-> OR
+    ADVISOR --> MATH
+    ADVISOR --> FIREWALL
+    FIREWALL --> SEARCH
+    ADVISOR <--> OLL
+    ADVISOR -.-> OR
 ```
 
 ---
@@ -139,3 +149,65 @@ Even though the database can query millions of rows in milliseconds, the browser
 - Only the rows visible in the viewport (+ an overscan of 5 rows above and below, ~35 rows total) are mounted as DOM elements.
 - Absolute positioning translates each row based on virtual scroll offset.
 - Scrolling through millions of historical transactions remains locked at 60 frames per second.
+
+---
+
+## 5. KI-Finanzberater & Ziel-Copilot Architektur
+
+The AI Financial Advisor architecture is designed around four strict engineering guarantees:
+1. **Zero Data Leakage**: User banking details never reach the internet.
+2. **Deterministic Financial Math**: LLMs do not calculate balances or target dates; a dedicated Rust math kernel computes exact integers in cents (`i64`).
+3. **Autonomous User Control**: The AI advises and simulates; the user commands.
+4. **Empathetic & Non-Patronizing Tone**: Hard prompt guidelines and automated tone verification prevent moralizing or patronizing language.
+
+```mermaid
+flowchart TD
+    subgraph AUDIT ["1. Spending Audit Engine"]
+        TX_DATA["Local Transaction History & Monthly Rollups"] --> SCANNER["Multi-Month Variance & Anomaly Scanner"]
+        SCANNER --> PATTERNS["Detect Subscriptions, Price Creep & Discretionary Spikes"]
+        PATTERNS --> PROMPT_BUILDER["Build Local Context (Anonymized Totals)"]
+    end
+
+    subgraph LLM_CORE ["2. Advisor Reasoning Engine"]
+        PROMPT_BUILDER --> GUARDRAIL["Tone & Policy Guardrail (Non-Patronizing Check)"]
+        GUARDRAIL --> LLM["Local Ollama SLM / Optional Cloud LLM"]
+        LLM --> INSIGHTS["Structured Advisory Insights & Sparhebel"]
+    end
+
+    subgraph SIMULATOR ["3. Deterministic Scenario Math Kernel"]
+        INSIGHTS --> LEVER_INPUT["User Interactive Lever Adjustments"]
+        LEVER_INPUT --> MATH_KERNEL["Rust / TS Integer Cent Calculation Engine"]
+        MATH_KERNEL --> ACCELERATION["Recalculated Target Due Dates & Months Saved"]
+    end
+
+    subgraph FIREWALL_SEARCH ["4. Privacy-Sanitized Web Research"]
+        INSIGHTS --> CANDIDATE["Identified Contract or Purchase (e.g. DSL, E-Bike)"]
+        CANDIDATE --> SANITIZER["Strict Sanitizer: Strip Names, IBANs, Memos, Locations"]
+        SANITIZER --> CLEAN_QUERY["Generic Market Query (e.g. 'DSL 100Mbit Allnet Deutschland 2026')"]
+        CLEAN_QUERY --> WEB_SEARCH["Web Search Provider (Local SearXNG / Grounded API)"]
+        WEB_SEARCH --> PARSER["Extract Verified Market Rates, Plans & Links"]
+        PARSER --> COMPARISON["Comparison Cards (Monthly Price, Annual Savings, Tradeoffs)"]
+    end
+
+    SIMULATOR --> UI_VIEW["Bento-Grid UI & Interactive What-If Studio"]
+    COMPARISON --> UI_VIEW
+    UI_VIEW --> USER_ACTION{"User Action"}
+    USER_ACTION -->|Apply Lever| BUDGET_MUTATION["Update Category Target / Assigned (Zero-Based Invariant Preserved)"]
+    USER_ACTION -->|Protect Category| PROTECT_FLAG["Flag 'Geschützte Lebensqualität' (Excluded from Future Cuts)"]
+    USER_ACTION -->|Dismiss| LOG_DISMISS["Train Rejection Memory"]
+```
+
+### 5.1 Privacy Sanitization Gateway
+Before any web search is initiated, candidate queries pass through a multi-pass regex and token stripper:
+- Strips IBANs (`[A-Z]{2}[0-9]{2}[0-9A-Z]{11,30}`), BIC/SWIFT, account numbers.
+- Strips personal names, street addresses, postal codes, and email addresses.
+- Normalizes specific transaction amounts into market segment queries (e.g., a 49,99 € phone bill becomes "Mobilfunk Allnet Flat unbegrenzt/25GB").
+- Logs sanitized query text to SQLite (`ai_market_researches.sanitized_query`), enabling full user auditability.
+
+### 5.2 Deterministic Target & Scenario Engine
+Given a target goal with remaining cents $R$, current monthly allocation $A$, and a proposed savings lever $\Delta s$:
+$$\text{Baseline Months} = \left\lceil \frac{R}{A} \right\rceil$$
+$$\text{Simulated Months} = \left\lceil \frac{R}{A + \Delta s} \right\rceil$$
+$$\text{Months Accelerated} = \text{Baseline Months} - \text{Simulated Months}$$
+All arithmetic is executed in `i64` minor units. Overspending risk in other categories is cross-checked before declaring feasibility.
+

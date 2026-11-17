@@ -86,6 +86,8 @@ Hierarchical budget buckets. **Note: No emojis or colored icons.**
 | `name` | `TEXT NOT NULL` | `String` | e.g. "Miete", "Lebensmittel", "Strom", "ÖPNV" |
 | `notes` | `TEXT DEFAULT ''` | `String` | Category description and notes |
 | `is_hidden` | `INTEGER NOT NULL DEFAULT 0` | `bool` | Soft hide |
+| `is_protected` | `INTEGER NOT NULL DEFAULT 0` | `bool` | Protected from AI savings cuts ("Geschützte Lebensqualität") |
+| `priority_tier` | `TEXT NOT NULL DEFAULT 'standard'` | `CategoryPriorityTier` | `essential`, `standard`, `discretionary`, `luxury` |
 | `sort_order` | `INTEGER NOT NULL DEFAULT 0` | `i32` | Order within group |
 
 ---
@@ -217,3 +219,106 @@ Stores reusable CSV/statement mapping templates per account (e.g. Trade Republic
 | `model_used` | `TEXT NOT NULL` | `String` | e.g. `ollama/llama3.2:3b`, `openrouter/gpt-4o-mini` |
 | `user_confirmed` | `INTEGER NOT NULL DEFAULT 0` | `bool` | 1 if approved by user |
 | `timestamp` | `INTEGER NOT NULL` | `i64` | Cache entry time |
+
+---
+
+## KI-Finanzberater & Ziel-Copilot Tabellen
+
+### 10. `ai_audit_runs`
+Stores triggered spending audit executions and their high-level findings.
+
+| Column | SQLite Type | Rust Type | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `TEXT PRIMARY KEY` | `String` | UUID v4 |
+| `budget_id` | `TEXT NOT NULL REFERENCES budgets(id)` | `String` | Foreign key |
+| `date_range_start` | `TEXT NOT NULL` | `String` | e.g. "2026-05-01" |
+| `date_range_end` | `TEXT NOT NULL` | `String` | e.g. "2026-10-31" |
+| `total_analyzed_cents` | `INTEGER NOT NULL` | `i64` | Total outflows evaluated in cents |
+| `identified_monthly_savings_cents` | `INTEGER NOT NULL` | `i64` | Potential monthly sum in cents |
+| `summary_markdown` | `TEXT NOT NULL` | `String` | Objective, non-patronizing summary |
+| `model_used` | `TEXT NOT NULL` | `String` | e.g. "ollama/llama3.2:3b" |
+| `created_at` | `INTEGER NOT NULL` | `i64` | Timestamp |
+
+---
+
+### 11. `ai_recommendations`
+Specific actionable findings produced by an audit run.
+
+| Column | SQLite Type | Rust Type | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `TEXT PRIMARY KEY` | `String` | UUID v4 |
+| `audit_run_id` | `TEXT NOT NULL REFERENCES ai_audit_runs(id)` | `String` | Foreign key |
+| `category_id` | `TEXT REFERENCES categories(id)` | `Option<String>` | Impacted category |
+| `type` | `TEXT NOT NULL` | `AiRecommendationType` | `recurring_subscription`, `rate_optimization`, `discretionary_trim`, `target_acceleration` |
+| `title` | `TEXT NOT NULL` | `String` | Clean, non-judgmental title |
+| `description` | `TEXT NOT NULL` | `String` | Supportive rationale |
+| `potential_monthly_savings_cents` | `INTEGER NOT NULL` | `i64` | Calculated savings lever in cents |
+| `current_monthly_average_cents` | `INTEGER NOT NULL` | `i64` | Historical baseline in cents |
+| `suggested_monthly_target_cents` | `INTEGER NOT NULL` | `i64` | Proposed revised allocation |
+| `confidence` | `REAL NOT NULL` | `f32` | Confidence score (0.0 to 1.0) |
+| `status` | `TEXT NOT NULL DEFAULT 'pending'` | `AiRecommendationStatus` | `pending`, `accepted`, `declined`, `deferred` |
+| `created_at` | `INTEGER NOT NULL` | `i64` | Timestamp |
+
+---
+
+### 12. `ai_market_researches`
+External price comparison results gathered via privacy-sanitized queries.
+
+| Column | SQLite Type | Rust Type | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `TEXT PRIMARY KEY` | `String` | UUID v4 |
+| `recommendation_id` | `TEXT REFERENCES ai_recommendations(id)` | `Option<String>` | Optional linked recommendation |
+| `category_id` | `TEXT REFERENCES categories(id)` | `Option<String>` | Category |
+| `sanitized_query` | `TEXT NOT NULL` | `String` | Generic anonymized search query executed |
+| `provider_name` | `TEXT NOT NULL` | `String` | e.g. "SIM.de", "Congstar", "E WIE EINFACH" |
+| `offer_title` | `TEXT NOT NULL` | `String` | e.g. "Allnet Flat 25GB 5G monatl. kündbar" |
+| `monthly_price_cents`| `INTEGER NOT NULL` | `i64` | Price in cents |
+| `one_time_fee_cents`| `INTEGER NOT NULL DEFAULT 0` | `i64` | Connection or setup fees |
+| `estimated_annual_savings_cents`| `INTEGER NOT NULL` | `i64` | Annual delta compared to current bill |
+| `features_summary` | `TEXT NOT NULL` | `String` | Feature bullet points / parity check |
+| `direct_url` | `TEXT NOT NULL` | `String` | Official provider URL (clean, no tracking) |
+| `verified_at` | `INTEGER NOT NULL` | `i64` | Timestamp of query execution |
+
+---
+
+### 13. `ai_goal_scenarios`
+Simulated "What-If" outcomes mapping savings levers to target completion.
+
+| Column | SQLite Type | Rust Type | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `TEXT PRIMARY KEY` | `String` | UUID v4 |
+| `budget_id` | `TEXT NOT NULL REFERENCES budgets(id)` | `String` | Foreign key |
+| `target_category_id` | `TEXT NOT NULL REFERENCES categories(id)` | `String` | Goal category being accelerated |
+| `scenario_name` | `TEXT NOT NULL` | `String` | e.g. "Sparhebel Gastronomie + DSL" |
+| `monthly_savings_allocated_cents` | `INTEGER NOT NULL` | `i64` | Incremental monthly savings diverted to target |
+| `baseline_target_month` | `TEXT NOT NULL` | `String` | Projected reach date without intervention (`YYYY-MM`) |
+| `simulated_target_month`| `TEXT NOT NULL` | `String` | Accelerated reach date (`YYYY-MM`) |
+| `months_saved` | `INTEGER NOT NULL` | `i32` | Difference in months |
+| `is_applied` | `INTEGER NOT NULL DEFAULT 0` | `bool` | Whether user committed changes to budget |
+| `created_at` | `INTEGER NOT NULL` | `i64` | Timestamp |
+
+---
+
+### 14. `ai_chat_sessions` & `ai_chat_messages`
+Stores interactive dialog history for goal refinement and non-patronizing advice.
+
+#### `ai_chat_sessions`
+| Column | SQLite Type | Rust Type | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `TEXT PRIMARY KEY` | `String` | UUID v4 |
+| `budget_id` | `TEXT NOT NULL REFERENCES budgets(id)` | `String` | Foreign key |
+| `title` | `TEXT NOT NULL` | `String` | e.g. "Sparziel-Konkretisierung Sommerurlaub" |
+| `context_type` | `TEXT NOT NULL` | `String` | `audit`, `goal_refinement`, `prioritization`, `general` |
+| `created_at` | `INTEGER NOT NULL` | `i64` | Timestamp |
+| `updated_at` | `INTEGER NOT NULL` | `i64` | Timestamp |
+
+#### `ai_chat_messages`
+| Column | SQLite Type | Rust Type | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `TEXT PRIMARY KEY` | `String` | UUID v4 |
+| `session_id` | `TEXT NOT NULL REFERENCES ai_chat_sessions(id)` | `String` | Foreign key |
+| `role` | `TEXT NOT NULL` | `String` | `user`, `assistant`, `system` |
+| `content` | `TEXT NOT NULL` | `String` | Message markdown content |
+| `structured_payload`| `TEXT` | `Option<String>` | JSON payload for action chips, sliders, or target drafts |
+| `created_at` | `INTEGER NOT NULL` | `i64` | Timestamp |
+

@@ -506,5 +506,83 @@ describe('Storage Operations & State Machine', () => {
     expect(storage.getAccounts().length).toBe(1);
     expect(storage.getAccounts()[0].id).toBe('acc-giro-1');
   });
+
+  it('manages AI audit runs and applies a goal scenario (Scenario 10)', () => {
+    // Setup target category
+    const catId = 'cat-notgroschen';
+    storage.setCategoryTarget(catId, {
+      targetType: 'monthly',
+      amountCents: 10000, // 100 €
+      dueDate: null,
+      rolloverAction: 'set_aside',
+    });
+
+    const scenario = {
+      id: 'scen-1',
+      budgetId: storage.getBudget().id,
+      targetCategoryId: catId,
+      scenarioName: 'Streaming Sparhebel',
+      monthlySavingsAllocatedCents: 1500, // 15 €
+      baselineTargetMonth: '2027-11',
+      simulatedTargetMonth: '2027-09',
+      monthsSaved: 2,
+      isApplied: false,
+      createdAt: Date.now(),
+    };
+
+    storage.saveGoalScenario(scenario);
+    expect(storage.getGoalScenarios().length).toBe(1);
+
+    // Apply scenario
+    const success = storage.applyGoalScenario('scen-1', '2026-12');
+    expect(success).toBe(true);
+
+    // Target quota increased from 100 € to 115 €
+    const updatedCat = storage.getCategories().find((c) => c.id === catId);
+    expect(updatedCat?.target?.amountCents).toBe(11500);
+
+    // Rollup in 2026-12 has assigned increased by 15 €
+    const decRollup = storage.getMonthlyRollup('2026-12', catId);
+    expect(decRollup.assignedCents).toBe(1500);
+
+    // Can undo cleanly
+    storage.undo();
+    const undoneCat = storage.getCategories().find((c) => c.id === catId);
+    expect(undoneCat?.target?.amountCents).toBe(10000);
+  });
+
+  it('correctly creates, lists and deletes an installment loan (Ratenkredit)', () => {
+    const budgetId = storage.getBudget().id;
+    const loan = storage.addAccount(
+      {
+        budgetId,
+        nickname: 'ING Ratenkredit',
+        accountType: 'loan',
+        isFavorite: true,
+        isClosed: false,
+        notes: 'Autokredit 48 Monate Laufzeit',
+        sortOrder: 1,
+        lastReconciledAt: null,
+      },
+      -500000 // -5.000,00 € debt
+    );
+
+    expect(loan.id).toBeDefined();
+    expect(loan.accountType).toBe('loan');
+    expect(loan.workingBalanceCents).toBe(-500000);
+    expect(loan.clearedBalanceCents).toBe(-500000);
+
+    // Initial transaction should be created with correct debt memo
+    const txs = storage.getTransactions(loan.id);
+    expect(txs.length).toBe(1);
+    expect(txs[0].memo).toBe('Anfangssaldo (Restschuld)');
+    expect(txs[0].amountCents).toBe(-500000);
+
+    // Delete loan account
+    const deleted = storage.deleteAccount(loan.id);
+    expect(deleted).toBe(true);
+    expect(storage.getAccounts().some((a) => a.id === loan.id)).toBe(false);
+    expect(storage.getTransactions(loan.id).length).toBe(0);
+  });
 });
 

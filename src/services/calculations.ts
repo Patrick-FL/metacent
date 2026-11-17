@@ -18,8 +18,15 @@ export function calculateBudgetMonth(month: string): BudgetMonthCalculation {
   const transactions = storage.getTransactions();
 
   // Total cash available from cash accounts
+  const cashAccountIds = new Set(
+    storage
+      .getAccounts()
+      .filter((a) => a.accountType === 'checking' || a.accountType === 'savings' || a.accountType === 'cash')
+      .map((a) => a.id)
+  );
+
   const totalCashInflowsCents = transactions
-    .filter((tx) => tx.categoryId === null && tx.amountCents > 0)
+    .filter((tx) => cashAccountIds.has(tx.accountId) && tx.categoryId === null && tx.amountCents > 0)
     .reduce((sum, tx) => sum + tx.amountCents, 0);
 
   const allMonths = storage.getAllRollupMonths();

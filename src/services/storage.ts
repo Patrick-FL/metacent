@@ -8,6 +8,13 @@ import {
   MonthlyCategoryRollup,
   Transaction,
   ClearedStatus,
+  isDebtAccountType,
+  AiAuditRun,
+  AiRecommendation,
+  AiRecommendationStatus,
+  AiGoalScenario,
+  AiChatSession,
+  AiChatMessage,
 } from '../types';
 
 const STORAGE_KEY = 'metacent_local_db_v1';
@@ -20,6 +27,10 @@ interface StorageSchema {
   transactions: Transaction[];
   rollups: Record<string, MonthlyCategoryRollup>; // key: `${month}:${categoryId}`
   importProfiles: ImportProfile[];
+  auditRuns?: AiAuditRun[];
+  recommendations?: AiRecommendation[];
+  goalScenarios?: AiGoalScenario[];
+  chatSessions?: AiChatSession[];
 }
 
 function getStandardCategoryGroups(budgetId: string): CategoryGroup[] {
@@ -339,13 +350,14 @@ class StorageService {
 
     if (initialBalanceCents !== 0) {
       const today = new Date().toISOString().split('T')[0];
+      const isDebt = isDebtAccountType(account.accountType);
       this.data.transactions.push({
         id: `tx-${Date.now()}`,
         accountId: id,
         date: today,
         payee: 'Anfangssaldo',
-        categoryId: null, // Ready to assign
-        memo: 'Startguthaben',
+        categoryId: null, // Ready to assign for cash, null for debt
+        memo: isDebt ? 'Anfangssaldo (Restschuld)' : 'Startguthaben',
         amountCents: initialBalanceCents,
         clearedStatus: 'cleared',
         isApproved: true,
@@ -911,6 +923,8 @@ class StorageService {
     if (updates.notes !== undefined) cat.notes = updates.notes;
     if (updates.groupId !== undefined) cat.groupId = updates.groupId;
     if (updates.isHidden !== undefined) cat.isHidden = updates.isHidden;
+    if (updates.isProtected !== undefined) cat.isProtected = updates.isProtected;
+    if (updates.priorityTier !== undefined) cat.priorityTier = updates.priorityTier;
     if (updates.sortOrder !== undefined) cat.sortOrder = updates.sortOrder;
 
     this.save();
@@ -1245,6 +1259,164 @@ class StorageService {
     this.snapshotForUndo();
     this.data.importProfiles = this.data.importProfiles.filter((p) => p.id !== id);
     this.save();
+  }
+
+  // ==========================================
+  // KI-Finanzberater & Ziel-Copilot Engine Storage
+  // ==========================================
+
+  public getAuditRuns(): AiAuditRun[] {
+    return this.data.auditRuns || [];
+  }
+
+  public getLatestAuditRun(): AiAuditRun | null {
+    const runs = this.getAuditRuns();
+    return runs.length > 0 ? runs[runs.length - 1] : null;
+  }
+
+  public saveAuditRun(run: AiAuditRun) {
+    this.snapshotForUndo();
+    if (!this.data.auditRuns) this.data.auditRuns = [];
+    this.data.auditRuns.push(run);
+    // Also merge recommendations into active list
+    if (!this.data.recommendations) this.data.recommendations = [];
+    for (const rec of run.recommendations) {
+      const idx = this.data.recommendations.findIndex((r) => r.id === rec.id);
+      if (idx >= 0) {
+        this.data.recommendations[idx] = rec;
+      } else {
+        this.data.recommendations.push(rec);
+      }
+    }
+    this.save();
+  }
+
+  public getRecommendations(): AiRecommendation[] {
+    return this.data.recommendations || [];
+  }
+
+  public updateRecommendationStatus(id: string, status: AiRecommendationStatus): boolean {
+    if (!this.data.recommendations) return false;
+    const rec = this.data.recommendations.find((r) => r.id === id);
+    if (!rec) return false;
+    this.snapshotForUndo();
+    rec.status = status;
+    this.save();
+    return true;
+  }
+
+  public updateRecommendation(id: string, updates: Partial<AiRecommendation>): boolean {
+    if (!this.data.recommendations) return false;
+    const rec = this.data.recommendations.find((r) => r.id === id);
+    if (!rec) return false;
+    this.snapshotForUndo();
+    Object.assign(rec, updates);
+    this.save();
+    return true;
+  }
+
+  public getGoalScenarios(): AiGoalScenario[] {
+    return this.data.goalScenarios || [];
+  }
+
+  public saveGoalScenario(scenario: AiGoalScenario) {
+    this.snapshotForUndo();
+    if (!this.data.goalScenarios) this.data.goalScenarios = [];
+    const idx = this.data.goalScenarios.findIndex((s) => s.id === scenario.id);
+    if (idx >= 0) {
+      this.data.goalScenarios[idx] = scenario;
+    } else {
+      this.data.goalScenarios.push(scenario);
+    }
+    this.save();
+  }
+
+  public applyGoalScenario(scenarioId: string, nextMonthKey?: string): boolean {
+    const scenario = (this.data.goalScenarios || []).find((s) => s.id === scenarioId);
+    if (!scenario) return false;
+
+    this.snapshotForUndo();
+    scenario.isApplied = true;
+
+    // If there is an associated target category, update its target or monthly assigned
+    const cat = this.data.categories.find((c) => c.id === scenario.targetCategoryId);
+    if (cat && cat.target) {
+      // If monthly target, increase monthly quota by allocated lever
+      if (cat.target.targetType === 'monthly') {
+        cat.target.amountCents += scenario.monthlySavingsAllocatedCents;
+      }
+    }
+
+    if (nextMonthKey && cat) {
+      const rollup = this.getMonthlyRollup(nextMonthKey, cat.id);
+      const key = `${nextMonthKey}:${cat.id}`;
+      if (!this.data.rollups[key]) {
+        this.data.rollups[key] = {
+          budgetId: this.data.budget.id,
+          month: nextMonthKey,
+          categoryId: cat.id,
+          assignedCents: rollup.assignedCents + scenario.monthlySavingsAllocatedCents,
+          activityCents: 0,
+          note: 'Sparhebel durch KI-Finanzberater',
+          availableCents: 0,
+        };
+      } else {
+        this.data.rollups[key].assignedCents += scenario.monthlySavingsAllocatedCents;
+      }
+    }
+
+    this.save();
+    return true;
+  }
+
+  public getChatSessions(): AiChatSession[] {
+    return this.data.chatSessions || [];
+  }
+
+  public getChatSession(id: string): AiChatSession | null {
+    return (this.data.chatSessions || []).find((s) => s.id === id) || null;
+  }
+
+  public saveChatSession(session: AiChatSession) {
+    if (!this.data.chatSessions) this.data.chatSessions = [];
+    const idx = this.data.chatSessions.findIndex((s) => s.id === session.id);
+    if (idx >= 0) {
+      this.data.chatSessions[idx] = session;
+    } else {
+      this.data.chatSessions.push(session);
+    }
+    this.save();
+  }
+
+  public addChatMessage(
+    sessionId: string,
+    message: Omit<AiChatMessage, 'id' | 'createdAt'>
+  ): AiChatMessage {
+    if (!this.data.chatSessions) this.data.chatSessions = [];
+    let session = this.data.chatSessions.find((s) => s.id === sessionId);
+    if (!session) {
+      session = {
+        id: sessionId,
+        budgetId: this.data.budget.id,
+        title: 'KI-Ziel-Copilot Beratung',
+        contextType: 'general',
+        messages: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      this.data.chatSessions.push(session);
+    }
+
+    const newMsg: AiChatMessage = {
+      ...message,
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      createdAt: Date.now(),
+    };
+
+    session.messages.push(newMsg);
+    session.updatedAt = Date.now();
+    this.save();
+    return newMsg;
   }
 }
 

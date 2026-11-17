@@ -125,3 +125,37 @@
      - Anzeige der durchschnittlichen Haltedauer von Euro-Cents zwischen Einnahme und Ausgabe.
      - Mindestanforderung: 10 Ausgabenbuchungen.
 - **Filterleiste**: Zeitraum-Umschalter, Kategorie-Filter, Konten-Filter, "Exportieren" (CSV/PDF).
+
+---
+
+## Screen S-08: KI-Finanzberater & Sparziel-Studio (AI Advisor & Goal Studio)
+- **Route**: `/advisor` (sowie als Schnellansicht/Drawer in der Monatsplanung)
+- **Purpose**: Interactive spending behavior analysis, scenario simulation with real-time target acceleration, privacy-sanitized internet price research, and conversational goal clarification.
+- **Key Elements**:
+  - **Kopfbereich (Header & Audit Control)**:
+    - Status-Banner mit Nothing OS Bento-Badge: `100% LOKAL & ANONYMISIERT`.
+    - Button `[ Ausgaben analysieren ]` mit Datumsfilter (3 / 6 / 12 Monate).
+    - Status der geschützten Kategorien: `X Kategorien als geschützte Lebensqualität markiert`.
+  - **Audit & Sparhebel-Bereich (Linke Spalte)**:
+    - Neutraler, empathischer Analyse-Bericht (z.B. ermittelte Fixkosten-Abweichungen, Abo-Übersichten).
+    - Interaktive Sparhebel-Karten:
+      - Kategorie-Name, historischer 6-Monats-Schnitt, Schieberegler (`0 €` bis `-150 €`).
+      - Button `[ Markt-Alternativen recherchieren ]` für Verträge und Abonnements.
+      - Checkbox `[ Geschützte Lebensqualität ]` zum sofortigen Ausschluss.
+  - **Markt-Vergleich & Alternativen-Panel (Web-Recherche)**:
+    - Verifizierte Tarif- & Produktkarten: Anbieter, Tarifname, Monatspreis, berechnete Jahresersparnis.
+    - Datenschutz-Transparenz-Pill: `Suchbegriff anzeigen` (zeigt die anonymisierte Anfrage).
+    - Aktions-Button: `[ Wechsel-Erinnerung einplanen ]`.
+  - **Ziel-Beschleunigungs-Simulator (Rechte Spalte)**:
+    - Dropdown zur Auswahl des Zieles (z.B. `Japan-Reise 2027`, `Notgroschen`).
+    - Visueller Zeitstrahl mit Vorher-Nachher-Vergleich (Normaler Zielmonat vs. Beschleunigter Zielmonat mit Mint-Grün-Hervorhebung).
+    - Summe des monatlichen Hebelbetrags in Cent.
+    - Primär-Button: `[ In Budget übernehmen ]` (führt zur Übernahme in die Monatsplanung).
+  - **Konversations-Copilot (Drawer / Bottom Bento)**:
+    - Interaktiver Chat mit Tastaturfokus (`Ctrl+K` oder Klick auf Copilot).
+    - Vorlagen-Chips (Quick Prompts):
+      - `„Wie kann ich 80 € im Monat für den Sommerurlaub freisetzen?“`
+      - `„Neues Sparziel für E-Bike anlegen (SMART)“`
+      - `„Priorisiere meine Sparziele nach Dringlichkeit“`
+      - `„Geschützte Lebensbereiche verwalten“`
+

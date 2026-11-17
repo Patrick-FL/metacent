@@ -71,10 +71,11 @@ specs/
 | Data Model | `architecture/DATA_MODEL.md` | ✅ Draft v1 Ready |
 | Service Layer API | `architecture/API.md` | ✅ Draft v1 Ready |
 | Technology Stack | `architecture/TECH_STACK.md` | ✅ Draft v1 Ready |
-| Architecture Decisions | `DECISIONS.md` | ✅ ADR-001 to ADR-005 |
+| Architecture Decisions | `DECISIONS.md` | ✅ ADR-001 to ADR-012 |
 | Feature: Budget Planning | `features/budget-planning/` | ✅ Review Ready |
 | Feature: Account Management | `features/account-management/` | ✅ Review Ready |
 | Feature: Transaction Register | `features/transaction-register/` | ✅ Review Ready |
 | Feature: File Import | `features/file-import/` | ✅ Review Ready |
 | Feature: Reconciliation | `features/reconciliation/` | ✅ Review Ready |
 | Feature: Reports (Reflect) | `features/reports-reflect/` | ✅ Review Ready |
+| Feature: KI-Finanzberater & Ziel-Copilot | `features/ai-financial-advisor/` | ✅ Verified / Implemented |

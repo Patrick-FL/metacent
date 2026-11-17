@@ -318,3 +318,59 @@
 - [ ] Undo/Redo buttons are visible in the toolbar
 - [ ] Undo works for: assignments, transaction edits, transaction creation, transaction deletion, category changes
 - [ ] The undo stack is per-session
+
+---
+
+## Theme 7: KI-Finanzberater & Ziel-Copilot
+
+### US-AI-01: KI-Ausgaben-Audit auf Knopfdruck starten
+**As a** budgeter, **I want to** trigger a deep AI analysis of my historical spending patterns on demand **so that** I can uncover recurring inefficiencies, hidden subscriptions, and creep in discretionary spending.
+
+- [ ] An "Ausgaben analysieren" action is accessible in Plan, Reflect, and the AI Advisor view
+- [ ] The audit analyzes recurring transactions, variances across 3/6/12 months, and category drifts
+- [ ] Insights are classified into impact tiers (e.g. Fixkosten-Optimierung, Abonnements, Flexible Ausgaben)
+- [ ] The analysis highlights both potential savings and positive spending habits
+- [ ] If transaction history is under 1 month, a helpful guidance state explains what data is needed
+
+### US-AI-02: Interaktive Szenario-Simulation & Was-wäre-wenn
+**As a** budgeter, **I want to** interactively simulate what happens if I reduce spending in specific areas **so that** I see exactly how much faster I can reach my personal targets and wishes.
+
+- [ ] Interactive sliders/levers allow adjusting monthly spending in proposed categories
+- [ ] Real-time recalculated metrics show the accelerated completion date for active targets
+- [ ] A comparative timeline visualizes "Baseline vs. Mit Sparhebel" (e.g. Ziel erreicht im Aug 2027 statt Nov 2027)
+- [ ] Changes in the simulator are non-destructive and only apply to the live budget when confirmed with "In Budget übernehmen"
+
+### US-AI-03: Anonymisierte Web-Preisrecherche & Alternativen-Vorschläge
+**As a** budgeter, **I want** the AI agent to research current market prices and alternatives on the web for my regular contracts and planned target purchases **so that** I can save money without sacrificing quality.
+
+- [ ] The agent identifies candidate expenses (e.g. mobile plans, internet/DSL, electricity, streaming, gym)
+- [ ] Before querying the web, a strict privacy firewall strips all PII (names, IBANs, exact notes, account numbers)
+- [ ] Search queries are strictly generic (e.g. "Mobilfunk 20GB Allnet Flat Deutschland Vergleich monatlich kündbar")
+- [ ] The agent presents concrete alternatives with verified provider names, monthly prices, feature parity, and estimated annual savings
+- [ ] The user can view the search term used and inspect the privacy boundary
+
+### US-AI-04: Ziel-Konkretisierung & SMART-Ziele definieren
+**As a** budgeter, **I want to** enter vague wishes or broad dreams into the AI Copilot **so that** the assistant helps me break them down into concrete, actionable SMART budget targets.
+
+- [ ] An interactive dialog guides me from a vague wish (e.g. "Ich will eine längere Reise machen") to concrete parameters (Zielbetrag, Zeitrahmen, monatliche Sparrate)
+- [ ] The agent performs market benchmark queries for cost estimation if requested (e.g. durchschnittliche Kosten für 3 Wochen Rundreise in Land X)
+- [ ] The resulting target integrates directly into metacent's envelope target engine (Target Balance by Date)
+- [ ] The agent suggests realistic milestone breakdowns (z.B. Flüge im Monat X buchen, Restbetrag bis Monat Y ansparen)
+
+### US-AI-05: Ziel-Priorisierung & Konflikt-Auflösung
+**As a** budgeter, **I want** supportive assistance when I have multiple competing goals and limited monthly cashflow **so that** I can order my priorities without feeling overwhelmed or judged.
+
+- [ ] The AI evaluates available monthly savings against all active target due dates
+- [ ] If targets exceed available monthly capacity ("Underfunded targets conflict"), the AI detects the bottleneck
+- [ ] The AI presents empathetic comparison questions (z.B. "Wie wichtig ist dir der Notgroschen-Puffer im Vergleich zum neuen E-Bike?")
+- [ ] The AI suggests tiered prioritization strategies (z.B. Notgroschen absichern $\to$ Fixkosten-Sinking-Funds $\to$ Urlaub $\to$ Luxuswünsche)
+- [ ] The user can accept, adjust, or reorder target priorities with one click
+
+### US-AI-06: Nicht-bevormundende Beratungs-Interaktion & geschützte Kategorien
+**As a** budgeter, **I want** the AI assistant to always communicate supportively and objectively without moralizing or lecturing **so that** I feel empowered and remain in full control of my financial decisions.
+
+- [ ] Tone guardrails ensure language is always advisory, respectful, and free of judgmental words ("solltest", "musst", "überflüssig", "Verschwendung")
+- [ ] I can flag any category as "Geschützte Lebensqualität" (Protected from Cuts) so the AI never suggests reducing it
+- [ ] The AI acknowledges and respects my personal values and subjective lifestyle choices
+- [ ] Every suggestion includes a dismiss option ("Kein Interesse") that immediately trains future recommendations
+

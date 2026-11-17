@@ -26,13 +26,17 @@ import {
   Copy,
   BarChart2,
   FileText,
+  Sparkles,
+  Shield,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface PlanViewProps {
   onUpdate: () => void;
+  onOpenAdvisor?: () => void;
 }
 
-export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
+export const PlanView: React.FC<PlanViewProps> = ({ onUpdate, onOpenAdvisor }) => {
   const [selectedMonth, setSelectedMonth] = useState('2026-11');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>('cat-miete');
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -453,6 +457,18 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
+          {onOpenAdvisor && (
+            <button
+              type="button"
+              onClick={onOpenAdvisor}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] hover:border-[var(--nothing-text)] text-[var(--nothing-text)] font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
+              title="KI-Ausgaben-Audit & Sparhebel öffnen"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#D71921]" />
+              <span>KI-Sparhebel</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setIsCopyPreviousMonthOpen(true)}
@@ -895,6 +911,49 @@ export const PlanView: React.FC<PlanViewProps> = ({ onUpdate }) => {
                     </p>
                   </div>
                 )}
+              </div>
+
+              {/* Quality of Life Protection Bento Card */}
+              <div className="bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] rounded-2xl p-4 flex items-center justify-between transition-colors">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 ${
+                    selectedCategory.isProtected
+                      ? 'bg-[#ADEBB3]/15 border-[#ADEBB3]/40 text-[#1e612a] dark:text-[#ADEBB3]'
+                      : 'bg-[var(--nothing-surface)] border-[var(--nothing-border)] text-[var(--nothing-muted)]'
+                  }`}>
+                    {selectedCategory.isProtected ? <ShieldCheck className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--nothing-text)]">
+                        Geschützte Lebensqualität
+                      </span>
+                      {selectedCategory.isProtected && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#1e612a] dark:bg-[#ADEBB3]" />
+                      )}
+                    </div>
+                    <span className="font-mono text-[9px] text-[var(--nothing-muted)] uppercase tracking-wider block">
+                      {selectedCategory.isProtected
+                        ? 'Kategorie ist vor KI-Kürzungen geschützt'
+                        : 'KI darf Sparhebel vorschlagen'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    storage.updateCategory(selectedCategory.id, { isProtected: !selectedCategory.isProtected });
+                    onUpdate();
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-mono uppercase tracking-wider font-semibold border transition-all cursor-pointer ${
+                    selectedCategory.isProtected
+                      ? 'bg-[#ADEBB3]/15 text-[#1e612a] dark:text-[#ADEBB3] border-[#ADEBB3]/40 hover:bg-[#ADEBB3]/25'
+                      : 'bg-[var(--nothing-surface)] text-[var(--nothing-muted)] border-[var(--nothing-border)] hover:text-[var(--nothing-text)]'
+                  }`}
+                >
+                  {selectedCategory.isProtected ? 'Geschützt' : 'Schützen'}
+                </button>
               </div>
 
               {/* Target Configuration Bento Card */}

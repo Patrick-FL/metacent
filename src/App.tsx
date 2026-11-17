@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Wallet, Plus, X } from 'lucide-react';
+import { Wallet, X } from 'lucide-react';
+import { Account } from './types';
 import { TitleBar } from './components/layout/TitleBar';
 import { Sidebar } from './components/layout/Sidebar';
 import { PlanView } from './components/plan/PlanView';
 import { RegisterView } from './components/register/RegisterView';
 import { ReflectView } from './components/reflect/ReflectView';
+import { AdvisorView } from './components/advisor/AdvisorView';
+import { AccountsOverviewView } from './components/accounts/AccountsOverviewView';
 import { AddAccountModal } from './components/accounts/AddAccountModal';
 import { EditAccountModal } from './components/accounts/EditAccountModal';
 import { ReconciliationModal } from './components/accounts/ReconciliationModal';
@@ -15,13 +18,15 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { storage } from './services/storage';
 
 export function App() {
-  const [currentView, setCurrentView] = useState<'plan' | 'reflect' | 'accounts'>('plan');
+  const [currentView, setCurrentView] = useState<'plan' | 'reflect' | 'accounts' | 'advisor'>('plan');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   // Modals state
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false);
   const [isReconcileOpen, setIsReconcileOpen] = useState(false);
+  const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
+  const [accountToReconcile, setAccountToReconcile] = useState<Account | null>(null);
   const [isFileImportOpen, setIsFileImportOpen] = useState(false);
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
   const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false);
@@ -34,8 +39,8 @@ export function App() {
   const accounts = storage.getAccounts();
   const isDemo = storage.isDemoData();
   const selectedAccount = selectedAccountId
-    ? accounts.find((a) => a.id === selectedAccountId) || accounts[0]
-    : accounts[0];
+    ? accounts.find((a) => a.id === selectedAccountId) || null
+    : null;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -140,45 +145,84 @@ export function App() {
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--nothing-bg)]">
           {currentView === 'plan' && !selectedAccountId && (
-            <PlanView onUpdate={triggerRefresh} />
+            <PlanView
+              onUpdate={triggerRefresh}
+              onOpenAdvisor={() => {
+                setCurrentView('advisor');
+                setSelectedAccountId(null);
+              }}
+            />
           )}
 
-          {(currentView === 'accounts' || selectedAccountId) && selectedAccount && (
+          {currentView === 'accounts' && !selectedAccountId && (
+            <AccountsOverviewView
+              onSelectAccount={(accId) => {
+                setSelectedAccountId(accId);
+                setCurrentView('accounts');
+              }}
+              onOpenAddAccount={() => setIsAddAccountOpen(true)}
+              onOpenEditAccount={(acc) => {
+                setAccountToEdit(acc);
+                setIsEditAccountOpen(true);
+              }}
+              onOpenReconcile={(acc) => {
+                setAccountToReconcile(acc);
+                setIsReconcileOpen(true);
+              }}
+              onUpdate={triggerRefresh}
+            />
+          )}
+
+          {selectedAccountId && selectedAccount && (
             <RegisterView
               account={selectedAccount}
               onUpdate={triggerRefresh}
               onOpenFileImport={() => setIsFileImportOpen(true)}
-              onOpenReconcile={() => setIsReconcileOpen(true)}
-              onOpenEditAccount={() => setIsEditAccountOpen(true)}
+              onOpenReconcile={() => {
+                setAccountToReconcile(selectedAccount);
+                setIsReconcileOpen(true);
+              }}
+              onOpenEditAccount={() => {
+                setAccountToEdit(selectedAccount);
+                setIsEditAccountOpen(true);
+              }}
             />
           )}
 
-          {(currentView === 'accounts' || selectedAccountId) && !selectedAccount && (
+          {selectedAccountId && !selectedAccount && (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[var(--nothing-bg)] select-none">
               <div className="w-16 h-16 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-surface)] flex items-center justify-center mb-4 text-[var(--nothing-muted)]">
                 <Wallet className="w-8 h-8" />
               </div>
               <p className="font-mono text-[10px] uppercase tracking-widest text-[#D71921] mb-1 font-semibold">
-                LEDGER // BEREIT
+                LEDGER // HINWEIS
               </p>
               <h2 className="text-xl font-bold text-[var(--nothing-text)] mb-2 font-sans">
-                Keine Konten vorhanden
+                Konto nicht gefunden
               </h2>
               <p className="max-w-md font-mono text-xs text-[var(--nothing-muted)] mb-6 leading-relaxed">
-                Erstelle dein erstes Bankkonto (z. B. Girokonto, Tagesgeld, Sparbuch, Kreditkarte oder Bargeld), um Buchungen zu erfassen und dein Budget zu steuern.
+                Das ausgewählte Konto existiert nicht mehr oder wurde entfernt.
               </p>
               <button
                 type="button"
-                onClick={() => setIsAddAccountOpen(true)}
+                onClick={() => setSelectedAccountId(null)}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--nothing-text)] text-[var(--nothing-bg)] font-mono text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-sm"
               >
-                <Plus className="w-4 h-4" />
-                <span>Erstes Konto hinzufügen</span>
+                <span>Zur Kontenübersicht</span>
               </button>
             </div>
           )}
 
           {currentView === 'reflect' && <ReflectView />}
+
+          {currentView === 'advisor' && (
+            <AdvisorView
+              onNavigateToPlan={() => {
+                setCurrentView('plan');
+                setSelectedAccountId(null);
+              }}
+            />
+          )}
         </main>
       </div>
 
@@ -189,23 +233,39 @@ export function App() {
         onSuccess={triggerRefresh}
       />
 
+      {(accountToEdit || selectedAccount) && (
+        <EditAccountModal
+          isOpen={isEditAccountOpen}
+          account={accountToEdit || selectedAccount!}
+          onClose={() => {
+            setIsEditAccountOpen(false);
+            setAccountToEdit(null);
+          }}
+          onSuccess={() => {
+            triggerRefresh();
+            const currentAccs = storage.getAccounts();
+            if (selectedAccountId && !currentAccs.some((a) => a.id === selectedAccountId)) {
+              setSelectedAccountId(null);
+            }
+          }}
+          onOpenTemplates={() => setIsProfileEditorOpen(true)}
+        />
+      )}
+
+      {(accountToReconcile || selectedAccount) && (
+        <ReconciliationModal
+          isOpen={isReconcileOpen}
+          account={accountToReconcile || selectedAccount!}
+          onClose={() => {
+            setIsReconcileOpen(false);
+            setAccountToReconcile(null);
+          }}
+          onSuccess={triggerRefresh}
+        />
+      )}
+
       {selectedAccount && (
         <>
-          <EditAccountModal
-            isOpen={isEditAccountOpen}
-            account={selectedAccount}
-            onClose={() => setIsEditAccountOpen(false)}
-            onSuccess={triggerRefresh}
-            onOpenTemplates={() => setIsProfileEditorOpen(true)}
-          />
-
-          <ReconciliationModal
-            isOpen={isReconcileOpen}
-            account={selectedAccount}
-            onClose={() => setIsReconcileOpen(false)}
-            onSuccess={triggerRefresh}
-          />
-
           <FileImportModal
             isOpen={isFileImportOpen}
             account={selectedAccount}

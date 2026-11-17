@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Account, Transaction } from '../../types';
+import { Account, Transaction, getAccountTypeLabel } from '../../types';
 import { formatCurrency, parseCurrencyInput } from '../../services/currency';
 import { storage } from '../../services/storage';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -443,7 +443,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
               <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-[var(--nothing-border)] bg-[var(--nothing-subsurface)] text-[var(--nothing-muted)] font-medium">
-                {account.accountType}
+                {getAccountTypeLabel(account.accountType)}
               </span>
             </div>
             <div className="font-mono text-[11px] text-[var(--nothing-muted)] mt-0.5 flex items-center gap-2">
@@ -466,17 +466,35 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
         {/* Live Balance Equation Bento Pill */}
         <div className="flex items-center gap-2.5 font-mono text-xs tabular-nums bg-[var(--nothing-subsurface)] border border-[var(--nothing-border)] px-4 py-2 rounded-2xl">
           <div className="text-right">
-            <span className="text-[var(--nothing-sage)] font-bold">{formatCurrency(account.clearedBalanceCents)}</span>
+            <span
+              className={`font-bold ${
+                account.clearedBalanceCents < 0 ? 'text-[#D71921]' : 'text-[var(--nothing-sage)]'
+              }`}
+            >
+              {formatCurrency(account.clearedBalanceCents)}
+            </span>
             <span className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">Bestätigt</span>
           </div>
           <span className="text-[var(--nothing-muted)]">+</span>
           <div className="text-right">
-            <span className="text-[var(--nothing-muted)] font-semibold">{formatCurrency(account.unclearedBalanceCents)}</span>
+            <span
+              className={`font-semibold ${
+                account.unclearedBalanceCents < 0 ? 'text-[#D71921]' : 'text-[var(--nothing-muted)]'
+              }`}
+            >
+              {formatCurrency(account.unclearedBalanceCents)}
+            </span>
             <span className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">Offen</span>
           </div>
           <span className="text-[var(--nothing-muted)]">=</span>
           <div className="text-right pl-2.5 border-l border-[var(--nothing-border)]">
-            <span className="text-[var(--nothing-text)] font-bold text-sm">{formatCurrency(account.workingBalanceCents)}</span>
+            <span
+              className={`font-bold text-sm ${
+                account.workingBalanceCents < 0 ? 'text-[#D71921]' : 'text-[var(--nothing-text)]'
+              }`}
+            >
+              {formatCurrency(account.workingBalanceCents)}
+            </span>
             <span className="block font-mono text-[9px] uppercase tracking-wider text-[var(--nothing-muted)]">Arbeitssaldo</span>
           </div>
         </div>

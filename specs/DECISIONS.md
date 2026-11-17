@@ -108,3 +108,17 @@ This document tracks key architectural and design decisions for **metacent**.
 - **Context:** The visual aesthetic must be clean, distraction-free, and high-contrast, matching the new bamboo logo.
 - **Decision:** Adopt a monochrome foundation with low highlighting, using mint-green (`#ADEBB3`) strictly as a functional accent. Remove all emoji icons from categories and use 100% single-color line icons.
 - **Rationale:** High information density, reduced visual fatigue during long budgeting sessions, and modern, elegant product aesthetics.
+
+---
+
+### ADR-012: KI-Finanzberater & Ziel-Copilot mit Privacy-First Web-Recherche und beratender Persona
+- **Date:** 2026-11-14
+- **Status:** accepted
+- **Context:** Users want deep AI-driven spending audits, interactive savings simulations, web-based price research/alternatives for contracts and planned purchases, and goal prioritization. However, metacent's core commitments to zero data leakage and non-patronizing user autonomy must be strictly upheld.
+- **Decision:**
+  1. **Dual-Model Advisory Architecture**: Local SLMs (Ollama) or user-configured LLMs execute spending analysis and conversational reasoning locally or via direct API keys.
+  2. **Deterministic Financial Math Kernel**: All recalculations of target due dates, required monthly contributions, and impact simulations are computed by the deterministic Rust/TypeScript core using integer cents (`i64`), not hallucinated by the LLM.
+  3. **Privacy Sanitization Gateway for Web Research**: Before triggering external web price comparisons (via local SearXNG, DuckDuckGo API, or grounded search), the system passes candidate queries through a hard regex/token sanitization layer that strips all account numbers, IBANs, names, dates, and exact account balances.
+  4. **Strict Advisory Persona & User Sovereignty**: The AI prompt includes strict behavioral guardrails prohibiting scolding, patronizing language, or unsolicited moral judgments. Users can flag categories as "Geschützte Lebensqualität" (completely exempt from cuts), and no budget adjustments occur without explicit user confirmation.
+- **Rationale:** Empowers users to uncover substantial real-world savings and achieve meaningful goals faster while maintaining 100% privacy, numerical precision, and a respectful user-agent relationship.
+

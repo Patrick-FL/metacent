@@ -1,14 +1,14 @@
 import React from 'react';
 import { Account } from '../../types';
 import { formatCurrency } from '../../services/currency';
-import { Wallet, PieChart, Layers, Plus, Settings, Star } from 'lucide-react';
+import { Wallet, PieChart, Layers, Plus, Settings, Star, Sparkles } from 'lucide-react';
 import logoUrl from '../../assets/logo.png';
 
 interface SidebarProps {
-  currentView: 'plan' | 'reflect' | 'accounts';
+  currentView: 'plan' | 'reflect' | 'accounts' | 'advisor';
   selectedAccountId: string | null;
   accounts: Account[];
-  onSelectView: (view: 'plan' | 'reflect' | 'accounts') => void;
+  onSelectView: (view: 'plan' | 'reflect' | 'accounts' | 'advisor') => void;
   onSelectAccount: (accountId: string) => void;
   onOpenAddAccount: () => void;
   onOpenSettings: () => void;
@@ -26,7 +26,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const cashAccounts = accounts.filter(
     (a) => a.accountType === 'checking' || a.accountType === 'savings' || a.accountType === 'cash'
   );
+  const creditAccounts = accounts.filter(
+    (a) => a.accountType === 'credit_card' || a.accountType === 'line_of_credit'
+  );
+  const loanAccounts = accounts.filter(
+    (a) => a.accountType === 'mortgage' || a.accountType === 'loan'
+  );
+
   const totalCashCents = cashAccounts.reduce((sum, a) => sum + a.workingBalanceCents, 0);
+  const totalCreditCents = creditAccounts.reduce((sum, a) => sum + a.workingBalanceCents, 0);
+  const totalLoanCents = loanAccounts.reduce((sum, a) => sum + a.workingBalanceCents, 0);
 
   return (
     <aside className="w-64 bg-[var(--nothing-surface)] border-r border-[var(--nothing-border)] flex flex-col h-full select-none text-[var(--nothing-text)] shrink-0 transition-colors">
@@ -84,6 +93,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           type="button"
+          onClick={() => onSelectView('advisor')}
+          className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+            currentView === 'advisor'
+              ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-semibold'
+              : 'text-[var(--nothing-muted)] hover:bg-[var(--nothing-subsurface)]/60 hover:text-[var(--nothing-text)] border border-transparent'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 shrink-0 text-[#D71921]" />
+          <span className="truncate">KI-Berater</span>
+          {currentView === 'advisor' && (
+            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#D71921]" />
+          )}
+        </button>
+
+        <button
+          type="button"
           onClick={() => onSelectView('accounts')}
           className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
             currentView === 'accounts' && !selectedAccountId
@@ -100,49 +125,150 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Account Section */}
-      <div className="flex-1 overflow-y-auto px-3 py-2">
-        <div className="flex items-center justify-between px-2 mb-2 font-mono text-[10px] font-semibold tracking-widest text-[var(--nothing-muted)] uppercase">
-          <span>BARKONTEN</span>
-          <span className="tabular-nums font-mono text-[11px] text-[var(--nothing-text)]">
-            {formatCurrency(totalCashCents)}
-          </span>
+      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
+        {/* BARKONTEN */}
+        <div>
+          <div className="flex items-center justify-between px-2 mb-1.5 font-mono text-[10px] font-semibold tracking-widest text-[var(--nothing-muted)] uppercase">
+            <span>BARKONTEN</span>
+            <span className="tabular-nums font-mono text-[11px] text-[var(--nothing-text)]">
+              {formatCurrency(totalCashCents)}
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            {cashAccounts.length === 0 ? (
+              <div className="px-3 py-2.5 text-center rounded-xl border border-dashed border-[var(--nothing-border)]">
+                <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
+                  {accounts.length === 0 ? 'Noch kein Konto angelegt' : 'Keine Barkonten'}
+                </p>
+              </div>
+            ) : (
+              cashAccounts.map((acc) => {
+                const isSelected = selectedAccountId === acc.id;
+                return (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => onSelectAccount(acc.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-medium'
+                        : 'text-[var(--nothing-muted)] hover:bg-[var(--nothing-subsurface)]/50 hover:text-[var(--nothing-text)] border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      {acc.isFavorite && (
+                        <Star className="w-3 h-3 text-[#D71921] fill-[#D71921] shrink-0" />
+                      )}
+                      <span className="truncate">{acc.nickname}</span>
+                    </div>
+                    <span
+                      className={`tabular-nums font-mono text-xs shrink-0 ${
+                        acc.workingBalanceCents < 0
+                          ? 'text-[#D71921]'
+                          : 'text-[var(--nothing-text)]'
+                      }`}
+                    >
+                      {formatCurrency(acc.workingBalanceCents)}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
 
-        <div className="space-y-1">
-          {cashAccounts.length === 0 ? (
-            <div className="px-3 py-3 text-center rounded-xl border border-dashed border-[var(--nothing-border)]">
-              <p className="font-mono text-[10px] text-[var(--nothing-muted)]">
-                Noch kein Konto angelegt
-              </p>
+        {/* KREDITKONTEN */}
+        {creditAccounts.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between px-2 mb-1.5 font-mono text-[10px] font-semibold tracking-widest text-[var(--nothing-muted)] uppercase">
+              <span>KREDITKONTEN</span>
+              <span className="tabular-nums font-mono text-[11px] text-[var(--nothing-text)]">
+                {formatCurrency(totalCreditCents)}
+              </span>
             </div>
-          ) : (
-            cashAccounts.map((acc) => {
-              const isSelected = selectedAccountId === acc.id;
-              return (
-                <button
-                  key={acc.id}
-                  type="button"
-                  onClick={() => onSelectAccount(acc.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
-                    isSelected
-                      ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-medium'
-                      : 'text-[var(--nothing-muted)] hover:bg-[var(--nothing-subsurface)]/50 hover:text-[var(--nothing-text)] border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 truncate pr-2">
-                    {acc.isFavorite && (
-                      <Star className="w-3 h-3 text-[#D71921] fill-[#D71921] shrink-0" />
-                    )}
-                    <span className="truncate">{acc.nickname}</span>
-                  </div>
-                  <span className="tabular-nums font-mono text-xs text-[var(--nothing-text)] shrink-0">
-                    {formatCurrency(acc.workingBalanceCents)}
-                  </span>
-                </button>
-              );
-            })
-          )}
-        </div>
+
+            <div className="space-y-1">
+              {creditAccounts.map((acc) => {
+                const isSelected = selectedAccountId === acc.id;
+                return (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => onSelectAccount(acc.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-medium'
+                        : 'text-[var(--nothing-muted)] hover:bg-[var(--nothing-subsurface)]/50 hover:text-[var(--nothing-text)] border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      {acc.isFavorite && (
+                        <Star className="w-3 h-3 text-[#D71921] fill-[#D71921] shrink-0" />
+                      )}
+                      <span className="truncate">{acc.nickname}</span>
+                    </div>
+                    <span
+                      className={`tabular-nums font-mono text-xs shrink-0 ${
+                        acc.workingBalanceCents < 0
+                          ? 'text-[#D71921]'
+                          : 'text-[var(--nothing-text)]'
+                      }`}
+                    >
+                      {formatCurrency(acc.workingBalanceCents)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* KREDITE & DARLEHEN */}
+        {loanAccounts.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between px-2 mb-1.5 font-mono text-[10px] font-semibold tracking-widest text-[var(--nothing-muted)] uppercase">
+              <span>KREDITE & DARLEHEN</span>
+              <span className="tabular-nums font-mono text-[11px] text-[#D71921]">
+                {formatCurrency(totalLoanCents)}
+              </span>
+            </div>
+
+            <div className="space-y-1">
+              {loanAccounts.map((acc) => {
+                const isSelected = selectedAccountId === acc.id;
+                return (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => onSelectAccount(acc.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-[var(--nothing-subsurface)] text-[var(--nothing-text)] border border-[var(--nothing-border)] font-medium'
+                        : 'text-[var(--nothing-muted)] hover:bg-[var(--nothing-subsurface)]/50 hover:text-[var(--nothing-text)] border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      {acc.isFavorite && (
+                        <Star className="w-3 h-3 text-[#D71921] fill-[#D71921] shrink-0" />
+                      )}
+                      <span className="truncate">{acc.nickname}</span>
+                    </div>
+                    <span
+                      className={`tabular-nums font-mono text-xs shrink-0 ${
+                        acc.workingBalanceCents < 0
+                          ? 'text-[#D71921]'
+                          : 'text-[var(--nothing-text)]'
+                      }`}
+                    >
+                      {formatCurrency(acc.workingBalanceCents)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Add Account Button */}
         <button
